@@ -1,4 +1,5 @@
 import "./globals.css";
+import Link from "next/link";
 import Header from "../components/header";
 
 export default function RootLayout({
@@ -12,6 +13,17 @@ export default function RootLayout({
 
         {/* HEADER GLOBAL */}
         <Header />
+
+        {/* BARRA GLOBAL EXTRA (CHAT) */}
+        <div className="border-b border-white/10 bg-black/60">
+          <div className="mx-auto max-w-6xl px-6 py-2 flex gap-6 text-sm">
+            <Link href="/explorar" className="hover:opacity-80">
+              Explorar
+            </Link>
+
+            <Link href="/chat">Chat 💬</Link>
+          </div>
+        </div>
 
         {/* CONTENIDO DE CADA PÁGINA */}
         <main className="flex-1">
