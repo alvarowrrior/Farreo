@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <section className="px-6 py-16 text-center">
       <h1 className="text-5xl font-extrabold mb-6">
-        Encuentra dónde salir esta noche
+        Encuentra dónde salir esta noche!
       </h1>
 
       <p className="text-gray-400 max-w-xl mx-auto mb-8">
