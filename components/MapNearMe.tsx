@@ -25,13 +25,11 @@ export default function MapNearMe() {
   const [status, setStatus] = useState<"idle" | "locating" | "ready" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Limpia markers de locales
   function clearLocaleMarkers() {
     localeMarkersRef.current.forEach((m) => m.remove());
     localeMarkersRef.current = [];
   }
 
-  // Pinta locales del Firestore
   async function loadAndRenderLocales() {
     if (!mapRef.current) return;
 
@@ -46,14 +44,50 @@ export default function MapNearMe() {
       return;
     }
 
-    locales.forEach((local) => {
+    locales.forEach((local: any) => {
       if (typeof local.lat !== "number" || typeof local.lng !== "number") return;
 
+      const name = local.name ?? "Local";
+      const desc = local.type; // en tu app lo estás usando como "descripción"
+      const rating = typeof local.rating === "number" ? local.rating : null;
+
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
-        <div style="color:black; font-family: system-ui; min-width: 180px">
-          <div style="font-weight: 700; margin-bottom: 4px">${local.name ?? "Local"}</div>
-          ${local.type ? `<div>Tipo: ${local.type}</div>` : ""}
-          ${typeof local.rating === "number" ? `<div>⭐ ${local.rating}</div>` : ""}
+        <div style="
+          color:#0b0b0b;
+          font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+          min-width: 240px;
+          max-width: 280px;
+        ">
+          <div style="font-weight: 900; font-size: 16px; margin-bottom: 8px; line-height: 1.15;">
+            ${name}
+          </div>
+
+          ${
+            rating !== null
+              ? `
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom: 10px;">
+                  <span style="color:#f59e0b; font-size: 16px;">★</span>
+                  <span style="font-weight: 700; font-size: 14px;">${rating.toFixed(1)}</span>
+                  <span style="color:#6b7280; font-size: 12px;">rating</span>
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            desc
+              ? `
+                <div style="margin-top: 2px;">
+                  <div style="font-weight: 700; font-size: 12px; color:#6b7280; margin-bottom: 2px;">
+                    Descripción:
+                  </div>
+                  <div style="font-size: 14px; line-height: 1.25;">
+                    ${desc}
+                  </div>
+                </div>
+              `
+              : ""
+          }
         </div>
       `);
 
@@ -126,7 +160,6 @@ export default function MapNearMe() {
     mapRef.current = map;
     meMarkerRef.current = meMarker;
 
-    // Cargar locales cuando el mapa termine de cargar
     map.on("load", () => {
       loadAndRenderLocales();
     });
