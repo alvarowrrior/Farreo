@@ -8,7 +8,7 @@ export default function HomePage() {
       </h1>
 
       <p className="text-gray-400 max-w-xl mx-auto mb-8">
-        Descubre bares, pubs y discotecas cerca de ti.
+        Descubre bares y discotecas cerca de ti.
       </p>
 
       <Link

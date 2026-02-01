@@ -10,23 +10,35 @@ type Coords = { lng: number; lat: number };
 
 const FALLBACK: Coords = { lng: -0.473, lat: 38.705 };
 
-// Para poder “matchear” coords con tolerancia
 function dist2(aLat: number, aLng: number, bLat: number, bLng: number) {
   const dLat = aLat - bLat;
   const dLng = aLng - bLng;
   return dLat * dLat + dLng * dLng;
 }
 
+// ✅ parse seguro: si no existe el param => NaN (NO 0)
+function getNumberParam(sp: ReturnType<typeof useSearchParams>, key: string) {
+  const v = sp.get(key);
+  if (v === null || v.trim() === "") return NaN;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 export default function MapNearMe() {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const searchParams = useSearchParams();
 
-  // ✅ params para “ir a un local”
-  const focusLat = useMemo(() => Number(searchParams.get("lat")), [searchParams]);
-  const focusLng = useMemo(() => Number(searchParams.get("lng")), [searchParams]);
+  // ✅ params seguros
+  const focusLat = useMemo(() => getNumberParam(searchParams, "lat"), [searchParams]);
+  const focusLng = useMemo(() => getNumberParam(searchParams, "lng"), [searchParams]);
   const focusName = useMemo(() => searchParams.get("name") ?? "Local", [searchParams]);
 
+  // ✅ fuerza “ir a mí” si entras con /buscar?me=1
+  const forceMe = useMemo(() => searchParams.get("me") === "1", [searchParams]);
+
+  // ✅ focus solo si realmente vienen lat/lng en la URL
   const hasFocus =
+    !forceMe &&
     Number.isFinite(focusLat) &&
     Number.isFinite(focusLng) &&
     Math.abs(focusLat) <= 90 &&
@@ -35,14 +47,11 @@ export default function MapNearMe() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
-  // Marker de tu ubicación
   const meMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  // ✅ Guardamos markers de locales en un map (key aproximada) + lista con coords para tolerancia
   const localeMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const localeCoordsRef = useRef<Array<{ lat: number; lng: number; marker: mapboxgl.Marker }>>([]);
 
-  // Marker del local enfocado por URL (solo fallback)
   const focusMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -55,14 +64,11 @@ export default function MapNearMe() {
     localeCoordsRef.current = [];
   }
 
-  // Encuentra el marker del local “más cercano” a (lat,lng) para evitar problemas de decimales
   function findMarkerNear(lat: number, lng: number) {
-    // 1) intenta match exacto por key redondeada
     const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
     const exact = localeMarkersRef.current.get(key);
     if (exact) return exact;
 
-    // 2) si no, busca por tolerancia (muy pequeña)
     let best: mapboxgl.Marker | null = null;
     let bestD = Infinity;
 
@@ -74,9 +80,7 @@ export default function MapNearMe() {
       }
     }
 
-    // tolerancia: ~0.0005 grados (~50m). Ajusta si quieres.
-    if (best && bestD <= 0.0005 * 0.0005) return best;
-
+    if (best && bestD <= 0.0005 * 0.0005) return best; // ~50m
     return null;
   }
 
@@ -98,7 +102,7 @@ export default function MapNearMe() {
       if (typeof local.lat !== "number" || typeof local.lng !== "number") return;
 
       const name = local.name ?? "Local";
-      const desc = local.type; // en tu app lo estás usando como "descripción"
+      const desc = local.type;
       const rating = typeof local.rating === "number" ? local.rating : null;
 
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
@@ -141,22 +145,20 @@ export default function MapNearMe() {
         </div>
       `);
 
-      const marker = new mapboxgl.Marker({ color: "#f59e0b" }) // amarillo
+      const marker = new mapboxgl.Marker({ color: "#f59e0b" })
         .setLngLat([local.lng, local.lat])
         .setPopup(popup)
         .addTo(mapRef.current!);
 
-      // Guardamos por key redondeada + lista para tolerancia
       const key = `${local.lat.toFixed(6)},${local.lng.toFixed(6)}`;
       localeMarkersRef.current.set(key, marker);
       localeCoordsRef.current.push({ lat: local.lat, lng: local.lng, marker });
     });
 
-    // ✅ Si venimos con focus, intenta abrir el popup completo del local tras cargar locales
+    // Si venimos con focus, abre popup real si existe
     if (hasFocus) {
       const m = findMarkerNear(focusLat, focusLng);
       if (m) {
-        // cierra fallback focus si existía
         focusMarkerRef.current?.remove();
         focusMarkerRef.current = null;
         m.togglePopup();
@@ -165,7 +167,7 @@ export default function MapNearMe() {
   }
 
   /* =========================================================
-     1) Crear el mapa (fallback) + 3D + cargar locales
+     1) Crear mapa + 3D + cargar locales + cleanup
      ========================================================= */
   useEffect(() => {
     if (!token) {
@@ -186,7 +188,6 @@ export default function MapNearMe() {
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    // 3D buildings
     map.on("style.load", () => {
       map.easeTo({ pitch: 60, bearing: -20, duration: 800 });
 
@@ -216,7 +217,6 @@ export default function MapNearMe() {
       }
     });
 
-    // Marker inicial (tu ubicación fallback)
     const meMarker = new mapboxgl.Marker({ color: "#111" })
       .setLngLat([FALLBACK.lng, FALLBACK.lat])
       .addTo(map);
@@ -227,6 +227,22 @@ export default function MapNearMe() {
     map.on("load", () => {
       loadAndRenderLocales();
     });
+
+    return () => {
+      try {
+        focusMarkerRef.current?.remove();
+        focusMarkerRef.current = null;
+
+        meMarkerRef.current?.remove();
+        meMarkerRef.current = null;
+
+        clearLocaleMarkers();
+
+        map.remove();
+      } finally {
+        mapRef.current = null;
+      }
+    };
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* =========================================================
@@ -266,21 +282,20 @@ export default function MapNearMe() {
 
   /* =========================================================
      3) Cuando llegan coords:
-        - siempre actualizar marker "yo"
-        - NO recentrar si hay focus
+        - actualizar marker "yo"
+        - recentrar si NO hay focus (o si vienes con ?me=1)
      ========================================================= */
   useEffect(() => {
     if (!coords || !mapRef.current) return;
 
-    // Marker "yo" siempre
-    meMarkerRef.current?.setLngLat([coords.lng, coords.lat]);
-
-    // Si vienes a un local, no muevas la cámara a tu ubicación
-    if (hasFocus) return;
-
     const map = mapRef.current;
 
-    const applyLocation = () => {
+    meMarkerRef.current?.setLngLat([coords.lng, coords.lat]);
+
+    // Si estás enfocado en un local (lat/lng en URL), no te roba el foco
+    if (hasFocus) return;
+
+    const goToMe = () => {
       map.flyTo({
         center: [coords.lng, coords.lat],
         zoom: 16,
@@ -290,15 +305,12 @@ export default function MapNearMe() {
       });
     };
 
-    if (!map.isStyleLoaded()) map.once("load", applyLocation);
-    else applyLocation();
+    if (!map.isStyleLoaded()) map.once("load", goToMe);
+    else goToMe();
   }, [coords?.lng, coords?.lat, hasFocus]);
 
   /* =========================================================
-     4) Focus por URL:
-        - centrar en el local
-        - intentar abrir popup completo del marker Firestore
-        - si aún no existe (porque locales no han cargado), mostrar fallback
+     4) Focus por URL
      ========================================================= */
   useEffect(() => {
     if (!mapRef.current || !hasFocus) return;
@@ -314,7 +326,6 @@ export default function MapNearMe() {
         essential: true,
       });
 
-      // 1) intenta abrir popup del local real
       const m = findMarkerNear(focusLat, focusLng);
       if (m) {
         focusMarkerRef.current?.remove();
@@ -323,7 +334,6 @@ export default function MapNearMe() {
         return;
       }
 
-      // 2) fallback si todavía no existe
       focusMarkerRef.current?.remove();
 
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
@@ -333,7 +343,7 @@ export default function MapNearMe() {
         </div>
       `);
 
-      focusMarkerRef.current = new mapboxgl.Marker({ color: "#fb923c" }) // naranja
+      focusMarkerRef.current = new mapboxgl.Marker({ color: "#fb923c" })
         .setLngLat([focusLng, focusLat])
         .setPopup(popup)
         .addTo(map);
