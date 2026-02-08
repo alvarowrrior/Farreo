@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getLocales, type Local } from "@/lib/locales";
-
-type Coords = { lat: number; lng: number };
+import { getCoords, type Coords } from "@/lib/location";
 
 function haversineMeters(a: Coords, b: Coords) {
   const R = 6371000;
@@ -35,22 +34,22 @@ export default function BuscarPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // 1) ubicación
+  // 1) ubicación (web + app)
   useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setErr("Tu navegador no soporta geolocalización.");
-      return;
-    }
+    let alive = true;
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setMe({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      },
-      () => {
-        setErr("No se pudo obtener tu ubicación. (Permisos / HTTPS)");
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    );
+    (async () => {
+      try {
+        const c = await getCoords();
+        if (alive) setMe(c);
+      } catch (e: any) {
+        if (alive) setErr(e?.message ?? "No se pudo obtener tu ubicación.");
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // 2) cargar locales
@@ -74,15 +73,13 @@ export default function BuscarPage() {
 
   // 3) calcular distancias + ordenar
   const localsWithDistance = useMemo(() => {
-    const base = locals
+    return locals
       .filter((l) => typeof l.lat === "number" && typeof l.lng === "number")
       .map((l) => {
         const dist = me ? haversineMeters(me, { lat: l.lat, lng: l.lng }) : Infinity;
         return { ...l, dist };
       })
       .sort((a, b) => a.dist - b.dist);
-
-    return base;
   }, [locals, me]);
 
   return (
@@ -92,6 +89,12 @@ export default function BuscarPage() {
           <h1 className="text-3xl font-extrabold">Buscar cerca de mí</h1>
           <p className="mt-2 text-gray-300">
             Lista de locales ordenados por distancia (sin buscador todavía).
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
+            Tu posición:{" "}
+            <span className="text-gray-200">
+              {me ? `${me.lat.toFixed(5)}, ${me.lng.toFixed(5)}` : "—"}
+            </span>
           </p>
         </div>
 
@@ -118,9 +121,7 @@ export default function BuscarPage() {
       )}
 
       <section className="mt-6 space-y-4">
-        {loading && (
-          <div className="text-sm text-gray-300">Cargando locales…</div>
-        )}
+        {loading && <div className="text-sm text-gray-300">Cargando locales…</div>}
 
         {!loading && localsWithDistance.length === 0 && (
           <div className="text-sm text-gray-300">
@@ -137,10 +138,14 @@ export default function BuscarPage() {
               <div>
                 <h3 className="text-lg font-semibold">{l.name ?? "Local"}</h3>
                 <p className="text-sm text-gray-400">
-                  {l.type ?? "—"} · Distancia: <span className="text-gray-200">{fmtDistance(l.dist)}</span>
+                  {l.type ?? "—"} · Distancia:{" "}
+                  <span className="text-gray-200">{fmtDistance((l as any).dist)}</span>
                 </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  Rating: <span className="text-gray-200">{typeof l.rating === "number" ? l.rating.toFixed(1) : "—"}</span>
+                  Rating:{" "}
+                  <span className="text-gray-200">
+                    {typeof l.rating === "number" ? l.rating.toFixed(1) : "—"}
+                  </span>
                 </p>
               </div>
 
