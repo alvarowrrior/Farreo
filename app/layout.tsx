@@ -9,8 +9,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="min-h-screen flex flex-col bg-black text-white">
+      <head>
+        {/* PWA */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="icon" href="/icon-192.png" />
+      </head>
 
+      <body className="min-h-screen flex flex-col bg-black text-white">
         {/* HEADER GLOBAL */}
         <Header />
 
@@ -26,9 +32,7 @@ export default function RootLayout({
         </div>
 
         {/* CONTENIDO DE CADA PÁGINA */}
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
 
         {/* FOOTER GLOBAL */}
         <footer className="border-t border-white/10 text-sm text-gray-400">
@@ -37,7 +41,6 @@ export default function RootLayout({
             <span>Hecho con Next.js</span>
           </div>
         </footer>
-
       </body>
     </html>
   );
