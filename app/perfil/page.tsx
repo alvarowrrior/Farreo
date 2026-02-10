@@ -1,132 +1,178 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { auth } from "@/lib/firebase"; // Ajusta la ruta según tu proyecto
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, updateProfile, type User } from "firebase/auth";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function EditProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
+  const router = useRouter();
 
+  // Escuchar el estado del usuario al cargar la página
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) {
         setUser(u);
         setDisplayName(u.displayName || "");
+        setLoading(false);
+      } else {
+        // Si no está logueado, redirigir a la home
+        router.push("/");
       }
     });
     return () => unsub();
-  }, []);
+  }, [router]);
 
+  // Función para guardar los cambios
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
-    if (!user) return;
+    
+    if (!auth.currentUser) return;
 
-    setLoading(true);
+    setUpdating(true);
     setMessage("");
 
     try {
-      await updateProfile(user, { displayName });
+      // 1. Actualizar en los servidores de Firebase
+      await updateProfile(auth.currentUser, { 
+        displayName: displayName.trim() 
+      });
+
+      // 2. FORZAR ACTUALIZACIÓN VISUAL:
+      // Creamos un nuevo objeto con los datos actualizados para que React lo detecte
+      const updatedUser = { ...auth.currentUser };
+      setUser(updatedUser);
+
+      // 3. Notificar a Next.js que los datos han cambiado (actualiza el Header)
+      router.refresh();
+
       setMessage("¡Perfil actualizado con éxito!");
+
+      // Limpiar el mensaje de éxito tras unos segundos
+      setTimeout(() => setMessage(""), 3000);
+
     } catch (error) {
-      console.error(error);
-      setMessage("Error al actualizar el perfil.");
+      console.error("Error updating profile:", error);
+      setMessage("Error al actualizar el perfil. Inténtalo de nuevo.");
     } finally {
-      setLoading(false);
+      setUpdating(false);
     }
   }
 
-  if (!user) {
+  // Pantalla de carga inicial
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <p className="text-gray-400">Cargando usuario...</p>
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-yellow-500"></div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white pt-20 pb-12 px-6">
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen pt-24 pb-12 px-6">
+      <div className="max-w-xl mx-auto">
         
-        {/* Enlace de regreso */}
-        <Link href="/" className="text-sm text-gray-500 hover:text-white transition-colors">
-          ← Volver al inicio
+        {/* Navegación de regreso */}
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-8"
+        >
+          <span>←</span> Volver al inicio
         </Link>
 
-        <h1 className="text-3xl font-bold mt-6 mb-8">Editar Perfil</h1>
+        <h1 className="text-4xl font-black mb-8 tracking-tighter text-white">
+          MI PERFIL
+        </h1>
 
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
-          <form onSubmit={handleUpdate} className="space-y-6">
+        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl">
+          <form onSubmit={handleUpdate} className="space-y-8">
             
-            {/* Foto de Perfil */}
-            <div className="flex items-center gap-6 mb-8">
-              {user.photoURL ? (
-                <img 
-                  src={user.photoURL} 
-                  alt="Avatar" 
-                  className="w-20 h-20 rounded-full border-2 border-yellow-500 object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-2xl font-bold">
-                  {user.displayName?.[0] || user.email?.[0]}
-                </div>
-              )}
+            {/* Sección de la Foto */}
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                {user?.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt="Avatar" 
+                    className="w-24 h-24 rounded-full border-2 border-yellow-500 object-cover shadow-lg shadow-yellow-500/20"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-yellow-500 text-black flex items-center justify-center text-3xl font-black">
+                    {displayName?.[0]?.toUpperCase() || "F"}
+                  </div>
+                )}
+              </div>
               <div>
-                <p className="text-sm text-gray-400">Imagen de perfil</p>
-                <p className="text-xs text-gray-500 mt-1">Sincronizada con tu cuenta de Google</p>
+                <p className="text-white font-bold text-lg">{displayName || "Usuario de Farreo"}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Usuario de Farreo</p>
               </div>
             </div>
 
-            {/* Campo: Nombre */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                Nombre de usuario
+            <hr className="border-white/5" />
+
+            {/* Input de Nombre */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Nombre en la pista
               </label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors"
-                placeholder="Tu nombre en Farreo"
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all placeholder:text-gray-700"
+                placeholder="Escribe tu nombre..."
+                required
               />
             </div>
 
-            {/* Campo: Email (Solo lectura) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                Correo electrónico
+            {/* Input de Email (Informativo) */}
+            <div className="space-y-2 opacity-60">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Email vinculado
               </label>
               <input
                 type="email"
-                value={user.email || ""}
+                value={user?.email || ""}
                 disabled
-                className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-gray-500 cursor-not-allowed"
+                className="w-full bg-transparent border border-white/5 rounded-2xl px-5 py-4 text-gray-400 cursor-not-allowed"
               />
-              <p className="text-[10px] text-gray-600 mt-2 italic">
-                El correo no se puede modificar por seguridad.
-              </p>
             </div>
 
-            {/* Mensaje de feedback */}
+            {/* Mensajes de Feedback */}
             {message && (
-              <p className={`text-sm ${message.includes("éxito") ? "text-green-400" : "text-red-400"}`}>
+              <div className={`p-4 rounded-2xl text-center text-sm font-medium animate-in fade-in slide-in-from-bottom-2 ${
+                message.includes("éxito") 
+                  ? "bg-green-500/10 text-green-400 border border-green-500/20" 
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
                 {message}
-              </p>
+              </div>
             )}
 
-            {/* Botón de acción */}
+            {/* Botón Guardar */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-yellow-500 transition-all transform active:scale-95 disabled:opacity-50"
+              disabled={updating}
+              className="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-yellow-500 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-wait shadow-xl shadow-white/5 hover:shadow-yellow-500/20"
             >
-              {loading ? "Guardando..." : "Guardar cambios"}
+              {updating ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
             </button>
           </form>
         </div>
+
+        {/* Botón de Cerrar Sesión (Opcional pero recomendado) */}
+        <button 
+          onClick={() => auth.signOut()}
+          className="w-full mt-8 py-4 text-sm text-gray-500 hover:text-red-400 transition-colors font-medium"
+        >
+          Cerrar sesión de forma segura
+        </button>
       </div>
     </main>
   );

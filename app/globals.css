@@ -37,12 +37,12 @@ body {
       radial-gradient(at 50% 0%, rgba(0, 100, 255, 0.1) 0px, transparent 55%);
     background-attachment: fixed;
     /* Aplicamos la animación */
-    animation: neon-pulse 2s ease-in-out infinite alternate;
+    animation: neon-pulse 6s ease-in-out infinite alternate;
   }
 
   @keyframes neon-pulse {
     0% {
-      opacity: 0.8;
+      opacity: 0.7;
       transform: scale(1);
     }
     50% {
@@ -50,8 +50,9 @@ body {
       transform: scale(1.02);
     }
     100% {
-      opacity: 0.9;
+      opacity: 0.6;
       transform: scale(1.02);
     }
   }
 }
+

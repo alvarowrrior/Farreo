@@ -1,407 +1,208 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import { useSearchParams } from "next/navigation";
 import type { Local } from "@/lib/locales";
 import { getLocales } from "@/lib/locales";
 
 type Coords = { lng: number; lat: number };
 
-const FALLBACK: Coords = { lng: -0.473, lat: 38.705 };
-
-function dist2(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const dLat = aLat - bLat;
-  const dLng = aLng - bLng;
-  return dLat * dLat + dLng * dLng;
+// ✅ Definimos la interfaz para las props
+interface MapProps {
+  onSelectLocal: (local: Local) => void;
 }
 
-// ✅ parse seguro: si no existe el param => NaN (NO 0)
-function getNumberParam(sp: ReturnType<typeof useSearchParams>, key: string) {
-  const v = sp.get(key);
-  if (v === null || v.trim() === "") return NaN;
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : NaN;
-}
-
-export default function MapNearMe() {
+export default function MapNearMe({ onSelectLocal }: MapProps) {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  const searchParams = useSearchParams();
-
-  // ✅ params seguros
-  const focusLat = useMemo(() => getNumberParam(searchParams, "lat"), [searchParams]);
-  const focusLng = useMemo(() => getNumberParam(searchParams, "lng"), [searchParams]);
-  const focusName = useMemo(() => searchParams.get("name") ?? "Local", [searchParams]);
-
-  // ✅ fuerza “ir a mí” si entras con /buscar?me=1
-  const forceMe = useMemo(() => searchParams.get("me") === "1", [searchParams]);
-
-  // ✅ focus solo si realmente vienen lat/lng en la URL
-  const hasFocus =
-    !forceMe &&
-    Number.isFinite(focusLat) &&
-    Number.isFinite(focusLng) &&
-    Math.abs(focusLat) <= 90 &&
-    Math.abs(focusLng) <= 180;
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-
   const meMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  const localeMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const localeCoordsRef = useRef<Array<{ lat: number; lng: number; marker: mapboxgl.Marker }>>([]);
-
-  const focusMarkerRef = useRef<mapboxgl.Marker | null>(null);
-
   const [coords, setCoords] = useState<Coords | null>(null);
-  const [status, setStatus] = useState<"idle" | "locating" | "ready" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-
-  function clearLocaleMarkers() {
-    localeMarkersRef.current.forEach((m) => m.remove());
-    localeMarkersRef.current = new Map();
-    localeCoordsRef.current = [];
-  }
-
-  function findMarkerNear(lat: number, lng: number) {
-    const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-    const exact = localeMarkersRef.current.get(key);
-    if (exact) return exact;
-
-    let best: mapboxgl.Marker | null = null;
-    let bestD = Infinity;
-
-    for (const item of localeCoordsRef.current) {
-      const d = dist2(lat, lng, item.lat, item.lng);
-      if (d < bestD) {
-        bestD = d;
-        best = item.marker;
-      }
-    }
-
-    if (best && bestD <= 0.0005 * 0.0005) return best; // ~50m
-    return null;
-  }
-
-  async function loadAndRenderLocales() {
-    if (!mapRef.current) return;
-
-    clearLocaleMarkers();
-
-    let locales: Local[] = [];
-    try {
-      locales = await getLocales();
-    } catch (e) {
-      console.warn("Error leyendo locales:", e);
-      setErrorMsg("No se pudieron cargar locales.");
-      return;
-    }
-
-    locales.forEach((local: any) => {
-      if (typeof local.lat !== "number" || typeof local.lng !== "number") return;
-
-      const name = local.name ?? "Local";
-      const desc = local.type;
-      const rating = typeof local.rating === "number" ? local.rating : null;
-
-      const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
-        <div style="
-          color:#0b0b0b;
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-          min-width: 240px;
-          max-width: 280px;
-        ">
-          <div style="font-weight: 900; font-size: 16px; margin-bottom: 8px; line-height: 1.15;">
-            ${name}
-          </div>
-
-          ${
-            rating !== null
-              ? `
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom: 10px;">
-                  <span style="color:#f59e0b; font-size: 16px;">★</span>
-                  <span style="font-weight: 700; font-size: 14px;">${rating.toFixed(1)}</span>
-                  <span style="color:#6b7280; font-size: 12px;">rating</span>
-                </div>
-              `
-              : ""
-          }
-
-          ${
-            desc
-              ? `
-                <div style="margin-top: 2px;">
-                  <div style="font-weight: 700; font-size: 12px; color:#6b7280; margin-bottom: 2px;">
-                    Descripción:
-                  </div>
-                  <div style="font-size: 14px; line-height: 1.25;">
-                    ${desc}
-                  </div>
-                </div>
-              `
-              : ""
-          }
-        </div>
-      `);
-
-      const marker = new mapboxgl.Marker({ color: "#f59e0b" })
-        .setLngLat([local.lng, local.lat])
-        .setPopup(popup)
-        .addTo(mapRef.current!);
-
-      const key = `${local.lat.toFixed(6)},${local.lng.toFixed(6)}`;
-      localeMarkersRef.current.set(key, marker);
-      localeCoordsRef.current.push({ lat: local.lat, lng: local.lng, marker });
-    });
-
-    // Si venimos con focus, abre popup real si existe
-    if (hasFocus) {
-      const m = findMarkerNear(focusLat, focusLng);
-      if (m) {
-        focusMarkerRef.current?.remove();
-        focusMarkerRef.current = null;
-        m.togglePopup();
-      }
-    }
-  }
+  const [status, setStatus] = useState<"locating" | "ready" | "error">("locating");
 
   /* =========================================================
-     1) Crear mapa + 3D + cargar locales + cleanup
+      1) RASTREO GPS
      ========================================================= */
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setErrorMsg("Falta NEXT_PUBLIC_MAPBOX_TOKEN");
-      return;
-    }
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    mapboxgl.accessToken = token;
-
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center: [FALLBACK.lng, FALLBACK.lat],
-      zoom: 15,
-    });
-
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    map.on("style.load", () => {
-      map.easeTo({ pitch: 60, bearing: -20, duration: 800 });
-
-      const layers = map.getStyle().layers ?? [];
-      const labelLayerId = layers.find(
-        (l) => l.type === "symbol" && (l.layout as any)?.["text-field"]
-      )?.id;
-
-      if (!map.getLayer("3d-buildings")) {
-        map.addLayer(
-          {
-            id: "3d-buildings",
-            source: "composite",
-            "source-layer": "building",
-            filter: ["==", "extrude", "true"],
-            type: "fill-extrusion",
-            minzoom: 15,
-            paint: {
-              "fill-extrusion-color": "#aaa",
-              "fill-extrusion-height": ["get", "height"],
-              "fill-extrusion-base": ["get", "min_height"],
-              "fill-extrusion-opacity": 0.65,
-            },
-          },
-          labelLayerId
-        );
-      }
-    });
-
-    const meMarker = new mapboxgl.Marker({ color: "#111" })
-      .setLngLat([FALLBACK.lng, FALLBACK.lat])
-      .addTo(map);
-
-    mapRef.current = map;
-    meMarkerRef.current = meMarker;
-
-    map.on("load", () => {
-      loadAndRenderLocales();
-    });
-
-    return () => {
-      try {
-        focusMarkerRef.current?.remove();
-        focusMarkerRef.current = null;
-
-        meMarkerRef.current?.remove();
-        meMarkerRef.current = null;
-
-        clearLocaleMarkers();
-
-        map.remove();
-      } finally {
-        mapRef.current = null;
-      }
-    };
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* =========================================================
-     2) Pedir ubicación
-     ========================================================= */
-  useEffect(() => {
-    setStatus("locating");
-
     if (!("geolocation" in navigator)) {
-      setStatus("ready");
-      setErrorMsg("Tu navegador no soporta geolocalización.");
+      setStatus("error");
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setCoords({ lng: pos.coords.longitude, lat: pos.coords.latitude });
         setStatus("ready");
       },
-      (err) => {
-        const reason =
-          err.code === err.PERMISSION_DENIED
-            ? "Permiso de ubicación denegado"
-            : err.code === err.POSITION_UNAVAILABLE
-            ? "Posición no disponible"
-            : err.code === err.TIMEOUT
-            ? "Timeout al pedir ubicación"
-            : "Error desconocido";
-
-        setErrorMsg(`${reason}. Mostrando zona aproximada.`);
-        setStatus("ready");
-        console.warn("Geolocation error:", err);
+      () => {
+        if (!coords) {
+            setCoords({ lng: -0.481, lat: 38.345 }); 
+            setStatus("ready");
+        }
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   /* =========================================================
-     3) Cuando llegan coords:
-        - actualizar marker "yo"
-        - recentrar si NO hay focus (o si vienes con ?me=1)
+      2) Inicializar mapa
      ========================================================= */
   useEffect(() => {
-    if (!coords || !mapRef.current) return;
+    if (status !== "ready" || !coords || !token || mapRef.current) return;
 
-    const map = mapRef.current;
+    mapboxgl.accessToken = token;
 
-    meMarkerRef.current?.setLngLat([coords.lng, coords.lat]);
-
-    // Si estás enfocado en un local (lat/lng en URL), no te roba el foco
-    if (hasFocus) return;
-
-    const goToMe = () => {
-      map.flyTo({
-        center: [coords.lng, coords.lat],
-        zoom: 16,
-        pitch: 60,
-        bearing: -20,
-        essential: true,
-      });
-    };
-
-    if (!map.isStyleLoaded()) map.once("load", goToMe);
-    else goToMe();
-  }, [coords?.lng, coords?.lat, hasFocus]);
-
-  /* =========================================================
-     4) Focus por URL
-     ========================================================= */
-  useEffect(() => {
-    if (!mapRef.current || !hasFocus) return;
-
-    const map = mapRef.current;
-
-    const applyFocus = () => {
-      map.flyTo({
-        center: [focusLng, focusLat],
-        zoom: 17,
-        pitch: 60,
-        bearing: -20,
-        essential: true,
-      });
-
-      const m = findMarkerNear(focusLat, focusLng);
-      if (m) {
-        focusMarkerRef.current?.remove();
-        focusMarkerRef.current = null;
-        m.togglePopup();
-        return;
-      }
-
-      focusMarkerRef.current?.remove();
-
-      const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
-        <div style="color:#0b0b0b; font-family: system-ui; min-width: 220px">
-          <div style="font-weight:900; font-size:16px; margin-bottom:6px;">${focusName}</div>
-          <div style="font-size:12px; color:#6b7280;">Local seleccionado</div>
-        </div>
-      `);
-
-      focusMarkerRef.current = new mapboxgl.Marker({ color: "#fb923c" })
-        .setLngLat([focusLng, focusLat])
-        .setPopup(popup)
-        .addTo(map);
-
-      focusMarkerRef.current.togglePopup();
-    };
-
-    if (!map.isStyleLoaded()) map.once("load", applyFocus);
-    else applyFocus();
-  }, [hasFocus, focusLat, focusLng, focusName]);
-
-  function goToMe() {
-    if (!coords || !mapRef.current) return;
-    mapRef.current.flyTo({
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current!,
+      style: "mapbox://styles/mapbox/dark-v11",
       center: [coords.lng, coords.lat],
       zoom: 16,
       pitch: 60,
-      bearing: -20,
-      essential: true,
+      bearing: -10,
+      antialias: true 
     });
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
+
+    map.on("load", () => {
+      map.resize();
+      
+      const layers = map.getStyle().layers;
+      const labelLayerId = layers?.find(l => l.type === "symbol" && (l.layout as any)?.["text-field"])?.id;
+
+      map.addLayer({
+        id: "3d-buildings",
+        source: "composite",
+        "source-layer": "building",
+        filter: ["==", "extrude", "true"],
+        type: "fill-extrusion",
+        minzoom: 15,
+        paint: {
+          "fill-extrusion-color": "#222",
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": ["get", "min_height"],
+          "fill-extrusion-opacity": 0.8,
+        },
+      }, labelLayerId);
+    });
+
+    // Marcador de usuario
+    const el = document.createElement("div");
+    el.className = "user-marker";
+    
+    meMarkerRef.current = new mapboxgl.Marker(el)
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(map);
+
+    mapRef.current = map;
+    loadLocales(map);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [status, token]);
+
+  /* =========================================================
+      3) Actualizar marcador "Yo"
+     ========================================================= */
+  useEffect(() => {
+    if (coords && meMarkerRef.current) {
+      meMarkerRef.current.setLngLat([coords.lng, coords.lat]);
+    }
+  }, [coords]);
+
+  /* =========================================================
+      4) Cargar locales y manejar clicks
+     ========================================================= */
+  async function loadLocales(map: mapboxgl.Map) {
+    try {
+      const locales = await getLocales();
+      locales.forEach((local) => {
+        if (!local.lat || !local.lng) return;
+
+        const markerEl = document.createElement("div");
+        markerEl.className = "disco-marker";
+
+        const marker = new mapboxgl.Marker(markerEl)
+          .setLngLat([local.lng, local.lat])
+          .addTo(map);
+
+        // ✅ EVENTO CLICK: Notificamos a la página del local seleccionado
+        markerEl.addEventListener('click', (e) => {
+          e.stopPropagation(); // Evita clics en el fondo del mapa
+          onSelectLocal(local);
+          
+          // Efecto visual de cámara al seleccionar
+          map.flyTo({
+            center: [local.lng, local.lat],
+            zoom: 17,
+            pitch: 70,
+            duration: 1500
+          });
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
+  const goToMe = () => {
+    if (!coords || !mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [coords.lng, coords.lat],
+      zoom: 17,
+      essential: true,
+      pitch: 60
+    });
+  };
+
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="text-sm opacity-80">
-          {status === "locating" && "Buscando tu ubicación…"}
-          {status === "ready" &&
-            (coords ? "Mostrando tu ubicación + locales." : "Mostrando zona aproximada + locales.")}
-          {status === "error" && "Error configurando el mapa."}
+    <div className="relative w-full h-full min-h-[400px] overflow-hidden bg-zinc-950">
+      {status === "locating" && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+          <div className="w-12 h-12 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin mb-4" />
+          <p className="text-white font-black text-xs tracking-widest uppercase animate-pulse">Sincronizando señal...</p>
         </div>
+      )}
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={loadAndRenderLocales}
-            className="text-xs px-3 py-1 rounded-xl border border-white/10 hover:bg-white/10"
-          >
-            Recargar locales
-          </button>
+      <div ref={mapContainerRef} className="w-full h-full" />
 
-          <button
-            onClick={goToMe}
-            className="text-xs px-3 py-1 rounded-xl border border-white/10 hover:bg-white/10"
-            disabled={!coords}
-            title={!coords ? "Primero necesitamos tu ubicación" : "Centrar en mi ubicación"}
-          >
-            Ir a mí
-          </button>
+      {status === "ready" && (
+        <button
+          onClick={goToMe}
+          className="absolute bottom-6 left-6 z-10 w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-7 h-7">
+            <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10a6 6 0 1 1 0-12 6 6 0 0 1 0 12z" />
+            <path d="M12 2a1 1 0 0 1 1 1v1.1a8.001 8.001 0 0 1 7.9 7.9H21a1 1 0 1 1 0 2h-1.1a8.001 8.001 0 0 1-7.9 7.9V21a1 1 0 1 1-2 0v-1.1A8.001 8.001 0 0 1 4.1 12H3a1 1 0 1 1 0-2h1.1A8.001 8.001 0 0 1 11 3.1V3a1 1 0 0 1 1-1z" />
+          </svg>
+        </button>
+      )}
 
-          {errorMsg && <div className="text-xs opacity-70">{errorMsg}</div>}
-        </div>
-      </div>
-
-      <div
-        ref={mapContainerRef}
-        className="w-full rounded-2xl overflow-hidden border border-white/10"
-        style={{ height: 420 }}
-      />
+      <style jsx global>{`
+        .user-marker {
+          width: 18px; height: 18px;
+          background: #3b82f6; border: 3px solid white;
+          border-radius: 50%; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+        }
+        .disco-marker {
+          width: 22px; height: 22px;
+          background: #f59e0b; border: 2px solid #000;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg); cursor: pointer;
+          box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+          transition: transform 0.2s;
+        }
+        .disco-marker:hover {
+          transform: rotate(-45deg) scale(1.2);
+          background: #ffffff;
+        }
+      `}</style>
     </div>
   );
 }
