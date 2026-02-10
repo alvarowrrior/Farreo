@@ -45,8 +45,8 @@ export default function LoginPage() {
         </Link>
 
         <h1 className="mt-6 text-3xl font-extrabold">Login</h1>
-        <p className="mt-2 text-gray-300">
-          Entra con Google para guardar favoritos y reseñas.
+        <p className="mt-1 text-gray-300 text-sm">
+          Entra con Google para guardar favoritos, realizar reseñas y comprar entradas.
         </p>
 
         <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -75,7 +75,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-4 text-xs text-gray-500">
-          Si te da error de dominio no autorizado, hay que añadir tu dominio de Vercel en Firebase → Auth → Settings → Authorized domains.
+          La información de tu perfil se sincroniza con tu cuenta de Google. Puedes gestionarla desde la configuración de tu cuenta.
         </p>
       </div>
     </main>

@@ -49,7 +49,12 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b border-white/10">
+    /* CAMBIO AQUÍ: 
+       'relative' activa el posicionamiento.
+       'z-50' lo pone al frente de todo.
+       'bg-black' asegura que no sea transparente y se mezcle con el fondo.
+    */
+    <header className="relative z-50 border-b border-white/10 bg-black">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold">
           Farreo 🍻
@@ -79,7 +84,7 @@ export default function Header() {
 
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-3 w-56 rounded-2xl border border-white/10 bg-black/90 backdrop-blur p-2 shadow-lg"
+                  className="absolute right-0 mt-3 w-56 rounded-2xl border border-white/10 bg-black/95 backdrop-blur-md p-2 shadow-2xl"
                   onMouseLeave={() => setMenuOpen(false)}
                 >
                   <div className="px-3 py-2">
@@ -101,7 +106,7 @@ export default function Header() {
 
                   <button
                     onClick={logout}
-                    className="w-full text-left rounded-xl px-3 py-2 text-sm hover:bg-white/10"
+                    className="w-full text-left rounded-xl px-3 py-2 text-sm hover:bg-white/10 text-red-400"
                   >
                     Cerrar sesión
                   </button>
