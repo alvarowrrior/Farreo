@@ -3,15 +3,18 @@ import { db } from "./firebase";
 
 export type Local = {
   id: string;
-  nombre: string;     // Cambiado de name
-  direccion: string;  // Cambiado de address
+  nombre: string;
   lat: number;
   lng: number;
-  tipo?: string;      // Cambiado de type
+  tipo: string;
+  // AÑADE ESTAS LÍNEAS:
+  fotoUrl?: string; 
+  descripcion?: string;
   rating?: number;
-  telefono?: string | null; // Cambiado de phone
-  web?: string | null;      // Cambiado de website
-  description?: string;     // Para evitar el error de Vercel
+  numResenas?: number;
+  web?: string;
+  direccion?: string;
+  telefono?: string;
 };
 
 export async function getLocales(): Promise<Local[]> {
