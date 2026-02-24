@@ -1,24 +1,10 @@
 @import "mapbox-gl/dist/mapbox-gl.css";
-
 @import "tailwindcss";
 
+/* Variables básicas (opcionales, pero limpias) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -27,32 +13,25 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-@layer utilities {
-  .bg-night-life {
-    background-color: #000;
-    /* Creamos 3 focos de luz sutiles */
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(120, 0, 255, 0.15) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, rgba(255, 160, 0, 0.1) 0px, transparent 55%),
-      radial-gradient(at 50% 0%, rgba(0, 100, 255, 0.1) 0px, transparent 55%);
-    background-attachment: fixed;
-    /* Aplicamos la animación */
-    animation: neon-pulse 6s ease-in-out infinite alternate;
-  }
-
-  @keyframes neon-pulse {
-    0% {
-      opacity: 0.7;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.02);
-    }
-    100% {
-      opacity: 0.6;
-      transform: scale(1.02);
-    }
-  }
+/* Sugerido: mejora consistencia de box model */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
+/* Mapbox: asegura que controles y canvas se vean bien */
+.mapboxgl-map {
+  font-family: inherit;
+}
+
+/* Útil si usas mapas a pantalla completa */
+html,
+body {
+  height: 100%;
+}
+
+/* (Opcional) si tienes un contenedor del mapa con height: 100% */
+#__next {
+  height: 100%;
+}

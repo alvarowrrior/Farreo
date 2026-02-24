@@ -1,117 +1,210 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MapNearMe from "@/components/MapNearMe";
-import { Local } from "@/lib/locales";
+import type { Local } from "@/lib/locales";
+
+type SheetSnap = "closed" | "mid" | "full";
 
 export default function BuscarPage() {
   const [selectedLocal, setSelectedLocal] = useState<Local | null>(null);
+  const [snap, setSnap] = useState<SheetSnap>("closed");
+
+  // 1. Bloquear scroll y OCULTAR FOOTER
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    
+    // Ocultar footer si existe en el layout global
+    const footer = document.querySelector("footer");
+    if (footer) footer.style.display = "none";
+
+    return () => {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+      if (footer) footer.style.display = "block";
+    };
+  }, []);
+
+  // Abrir al seleccionar local
+  useEffect(() => {
+    if (selectedLocal) setSnap("mid");
+    else setSnap("closed");
+  }, [selectedLocal]);
+
+  const title = useMemo(() => {
+    return selectedLocal ? selectedLocal.nombre : "Cerca de ti";
+  }, [selectedLocal]);
 
   return (
-    <main className="relative pt-5 pb-10 min-h-screen text-white">
-      <div className="max-w-6xl mx-auto">
-        
-        <header className="flex flex-col gap-1 px-6 mb-6">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic">
-            Explorar Mapa
-          </h1>
-          <p className="text-gray-400 text-sm md:text-base font-medium max-w-md">
-            Encuentra los mejores locales y eventos a tu alrededor en Madrid.
-          </p>
-        </header>
-
-        <section className="relative w-full overflow-hidden sm:rounded-[3rem] border-y sm:border border-white/10 shadow-2xl bg-zinc-950">
-          <Suspense fallback={<LoadingState />}>
-            <div className="w-full h-[70vh] sm:h-[650px]">
-              <MapNearMe onSelectLocal={setSelectedLocal} />
-            </div>
-          </Suspense>
-        </section>
-
-        <div 
-          className={`px-4 sm:px-0 transition-all duration-700 ease-in-out ${
-            selectedLocal ? "mt-8 opacity-100 translate-y-0" : "mt-0 opacity-0 translate-y-10 pointer-events-none"
-          }`}
-        >
-          {selectedLocal && (
-            <div className="relative bg-zinc-900/50 border border-white/10 rounded-[2.5rem] p-6 sm:p-8 backdrop-blur-2xl overflow-hidden shadow-2xl">
-              
-              <button 
-                onClick={() => setSelectedLocal(null)}
-                className="absolute top-6 right-6 z-10 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:rotate-90"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="flex flex-col lg:flex-row gap-8">
-                <div className="w-full lg:w-72 space-y-4">
-                  <div className="aspect-square bg-yellow-500/10 rounded-[2rem] border border-yellow-500/20 flex items-center justify-center overflow-hidden relative">
-                    <span className="text-yellow-500 text-6xl">✨</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Rating</span>
-                      <span className="text-white font-black text-sm">{selectedLocal.rating || "4.5"}</span>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl flex flex-col items-center">
-                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Tipo</span>
-                      <span className="text-white font-black text-sm capitalize">{selectedLocal.tipo || "Local"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-between py-2">
-                  <div className="space-y-4">
-                    <span className="bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Verificado</span>
-                    <h2 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">
-                      {/* Ajustado a 'nombre' según tu Firebase */}
-                      {selectedLocal.nombre}
-                    </h2>
-                    <p className="text-gray-400 text-sm md:text-base leading-relaxed max-w-xl">
-                      {/* Ajustado a 'description' y 'direccion' */}
-                      {selectedLocal.description || (selectedLocal.direccion ? `Ubicado en ${selectedLocal.direccion}.` : "Vive una experiencia única en el epicentro de la fiesta.")} 
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                    <button className="flex-1 bg-white text-black font-black py-4 rounded-2xl uppercase text-xs tracking-widest hover:bg-yellow-500 transition-all">
-                      Reservar Mesa
-                    </button>
-                    {/* Botón dinámico usando el campo 'web' de tu DB */}
-                    <a 
-                      href={selectedLocal.web || "#"} 
-                      target="_blank" 
-                      className="flex-1 bg-zinc-800 border border-white/10 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-widest text-center"
-                    >
-                      Más Información
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <footer className="flex flex-col sm:flex-row items-center gap-4 justify-between py-12 px-8 text-gray-500">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-            <p className="text-[10px] uppercase font-black tracking-widest">Sincronizado con Firebase</p>
-          </div>
-          <p className="text-[10px] uppercase font-black tracking-widest opacity-30">Farreo App v2.5 • 2026</p>
-        </footer>
+    <main className="fixed inset-0 bg-black overflow-hidden">
+      {/* MAPA */}
+      <div className="absolute inset-0">
+        <MapNearMe onSelectLocal={setSelectedLocal} />
       </div>
+
+      {/* BOTTOM SHEET */}
+      <BottomSheet
+        snap={snap}
+        onSnapChange={setSnap}
+        title={title}
+        onClose={() => {
+          setSnap("closed");
+          setSelectedLocal(null);
+        }}
+      >
+        {selectedLocal ? (
+          <PanelContent local={selectedLocal} />
+        ) : (
+          <div className="p-4 text-center">
+            <p className="text-sm text-gray-400">Toca un marcador en el mapa</p>
+          </div>
+        )}
+      </BottomSheet>
     </main>
   );
 }
 
-function LoadingState() {
+/* ---------------- Bottom Sheet ---------------- */
+
+function BottomSheet({
+  snap,
+  onSnapChange,
+  onClose,
+  title,
+  children,
+}: {
+  snap: SheetSnap;
+  onSnapChange: (s: SheetSnap) => void;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  
+  // Función para alternar snap al hacer click en la barra
+  const handleToggle = () => {
+    if (snap === "mid") onSnapChange("full");
+    else onSnapChange("mid");
+  };
+
+  // Definición de posiciones (translateY)
+  const getTranslation = () => {
+    switch (snap) {
+      case "full": return "12vh";  // Casi arriba
+      case "mid": return "55vh";   // Mitad de pantalla
+      case "closed": return "100vh"; // Escondido
+    }
+  };
+
   return (
-    <div className="w-full h-[70vh] sm:h-[650px] flex flex-col items-center justify-center">
-      <div className="w-12 h-12 border-4 border-white/5 border-t-yellow-500 rounded-full animate-spin mb-4" />
-      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Cargando Radar</p>
+    <div className="absolute inset-0 z-50 pointer-events-none flex justify-center">
+      <div
+        className={`
+          pointer-events-auto 
+          w-full sm:w-[90%] md:w-[600px] lg:w-[700px] /* ✅ Ancho responsivo actualizado */
+          bg-zinc-900/95 backdrop-blur-xl 
+          border border-white/10 rounded-t-[2.5rem] shadow-2xl shadow-black/90
+          transition-transform duration-500 cubic-bezier(0.32, 0.72, 0, 1) /* Animación fluida */
+        `}
+        style={{ transform: `translateY(${getTranslation()})` }}
+      >
+        {/* HEADER / BOTÓN DE CONTROL */}
+        <div 
+          className="w-full pt-4 pb-2 cursor-pointer group"
+          onClick={handleToggle}
+        >
+          {/* La barrita (píldora) */}
+          <div className="mx-auto h-1.5 w-12 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors" />
+          
+          <div className="mt-4 px-6 flex items-center justify-between">
+            <h1 className="text-lg font-bold text-white truncate pr-4 uppercase italic tracking-tight">
+              {title}
+            </h1>
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Evita que el click cierre/abra el panel
+                onClose();
+              }}
+              className="text-xs font-bold text-zinc-500 hover:text-white uppercase tracking-widest"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+        {/* CONTENIDO */}
+        <div
+          className={`px-6 pb-10 h-full ${snap === "full" ? "overflow-y-auto" : "overflow-hidden"}`}
+          style={{ maxHeight: "85vh" }}
+        >
+          {children}
+        </div>
+      </div>
     </div>
+  );
+}
+
+/* ---------------- Panel content ---------------- */
+
+function PanelContent({ local }: { local: Local }) {
+  return (
+    <article className="pb-10">
+      {/* Imagen con Aspect Ratio controlado */}
+      <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-zinc-1200 mt-2 shadow-lg">
+        {local.fotoUrl ? (
+          <img
+            src={local.fotoUrl}
+            alt={local.nombre}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center bg-zinc-800">
+            <span className="text-4xl opacity-50">📸</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 flex justify-between items-start">
+        <div>
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-yellow-500 text-black text-[10px] font-black uppercase tracking-tighter mb-2">
+            {local.tipo || "Premium"}
+          </span>
+          <h2 className="text-3xl font-black text-white uppercase italic leading-none">
+            {local.nombre}
+          </h2>
+        </div>
+        
+        <div className="bg-white/5 p-2 rounded-2xl border border-white/5 text-center min-w-[60px]">
+          <span className="block text-yellow-400 text-lg font-bold">★ {local.rating || "4.5"}</span>
+          <span className="text-[9px] text-zinc-500 uppercase font-bold">{local.numResenas || "0"} reviews</span>
+        </div>
+      </div>
+
+      <p className="mt-4 text-zinc-400 text-base leading-relaxed">
+        {local.descripcion || "Este local aún no tiene una descripción detallada. ¡Ven a descubrirlo!"}
+      </p>
+
+      {local.direccion && (
+        <div className="mt-6 flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5 text-zinc-300">
+          <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          </svg>
+          <span className="text-sm font-medium">{local.direccion}</span>
+        </div>
+      )}
+
+      <div className="mt-8 grid grid-cols-2 gap-4">
+        <button className="bg-white text-black py-4 rounded-2xl font-black text-sm uppercase hover:bg-yellow-400 transition-colors shadow-xl shadow-white/5">
+          Reservar Mesa
+        </button>
+        <a
+          href={local.web || "#"}
+          target="_blank"
+          className="flex items-center justify-center border-2 border-white/10 text-white py-4 rounded-2xl font-black text-sm uppercase hover:bg-white/5 transition-all"
+        >
+          Sitio Web
+        </a>
+      </div>
+    </article>
   );
 }

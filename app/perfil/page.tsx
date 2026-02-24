@@ -1,179 +1,182 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, updateProfile, type User } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, updateProfile, type User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function EditProfilePage() {
+  const router = useRouter();
+  const nameId = useId();
+
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [message, setMessage] = useState("");
-  const router = useRouter();
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Escuchar el estado del usuario al cargar la página
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUser(u);
-        setDisplayName(u.displayName || "");
-        setLoading(false);
-      } else {
-        // Si no está logueado, redirigir a la home
+      if (!u) {
         router.push("/");
+        return;
       }
+      setUser(u);
+      setDisplayName(u.displayName ?? "");
+      setLoading(false);
     });
+
     return () => unsub();
   }, [router]);
 
-  // Función para guardar los cambios
-  async function handleUpdate(e: React.FormEvent) {
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    
-    if (!auth.currentUser) return;
+    setMessage(null);
+
+    const current = auth.currentUser;
+    if (!current) return;
+
+    const nextName = displayName.trim();
+
+    // Evita llamadas inútiles
+    if (nextName === (current.displayName ?? "")) {
+      setMessage({ type: "success", text: "No hay cambios que guardar." });
+      return;
+    }
 
     setUpdating(true);
-    setMessage("");
-
     try {
-      // 1. Actualizar en los servidores de Firebase
-      await updateProfile(auth.currentUser, { 
-        displayName: displayName.trim() 
-      });
+      await updateProfile(current, { displayName: nextName });
 
-      // 2. FORZAR ACTUALIZACIÓN VISUAL:
-      // Creamos un nuevo objeto con los datos actualizados para que React lo detecte
-      const updatedUser = { ...auth.currentUser };
-      setUser(updatedUser);
+      // Refrescamos estado local para UI inmediata
+      setUser({ ...current });
 
-      // 3. Notificar a Next.js que los datos han cambiado (actualiza el Header)
-      router.refresh();
+      setMessage({ type: "success", text: "Perfil actualizado." });
 
-      setMessage("¡Perfil actualizado con éxito!");
+      // Opcional: si tu header depende de server components/caché
+      // router.refresh();
 
-      // Limpiar el mensaje de éxito tras unos segundos
-      setTimeout(() => setMessage(""), 3000);
-
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      setMessage("Error al actualizar el perfil. Inténtalo de nuevo.");
+      window.setTimeout(() => setMessage(null), 2500);
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "error", text: "No se pudo actualizar el perfil. Inténtalo de nuevo." });
     } finally {
       setUpdating(false);
     }
   }
 
-  // Pantalla de carga inicial
+  async function handleSignOut() {
+    try {
+      await auth.signOut();
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "error", text: "No se pudo cerrar sesión." });
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-yellow-500"></div>
-      </div>
+      <main className="min-h-[70vh] flex items-center justify-center">
+        <p className="text-sm text-gray-400">Cargando…</p>
+      </main>
     );
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-12 px-6">
-      <div className="max-w-xl mx-auto">
-        
-        {/* Navegación de regreso */}
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-8"
-        >
-          <span>←</span> Volver al inicio
-        </Link>
+    <>
+      <header className="px-6 pt-10">
+        <nav className="max-w-xl mx-auto">
+          <Link href="/" className="text-sm text-gray-500 hover:text-white">
+            ← Volver
+          </Link>
+        </nav>
+      </header>
 
-        <h1 className="text-4xl font-black mb-8 tracking-tighter text-white">
-          MI PERFIL
-        </h1>
+      <main className="px-6 pb-12">
+        <div className="max-w-xl mx-auto mt-6">
+          <h1 className="text-2xl font-bold text-white">Mi perfil</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Actualiza tu nombre público.
+          </p>
 
-        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-md shadow-2xl">
-          <form onSubmit={handleUpdate} className="space-y-8">
-            
-            {/* Sección de la Foto */}
-            <div className="flex items-center gap-6">
-              <div className="relative group">
+          <section className="mt-8">
+            <div className="rounded-2xl border border-white/10 p-6">
+              <div className="flex items-center gap-4">
                 {user?.photoURL ? (
-                  <img 
-                    src={user.photoURL} 
-                    alt="Avatar" 
-                    className="w-24 h-24 rounded-full border-2 border-yellow-500 object-cover shadow-lg shadow-yellow-500/20"
+                  <img
+                    src={user.photoURL}
+                    alt="Foto de perfil"
+                    className="h-14 w-14 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-yellow-500 text-black flex items-center justify-center text-3xl font-black">
-                    {displayName?.[0]?.toUpperCase() || "F"}
+                  <div className="h-14 w-14 rounded-full bg-white/10 flex items-center justify-center text-white font-semibold">
+                    {(displayName?.[0] ?? "F").toUpperCase()}
                   </div>
                 )}
+
+                <div>
+                  <p className="text-white font-medium">
+                    {displayName || "Usuario de Farreo"}
+                  </p>
+                  <p className="text-sm text-gray-400">{user?.email ?? ""}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-white font-bold text-lg">{displayName || "Usuario de Farreo"}</p>
-                <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Usuario de Farreo</p>
-              </div>
+
+              <form onSubmit={handleUpdate} className="mt-6">
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-white">
+                    Datos públicos
+                  </legend>
+
+                  <label htmlFor={nameId} className="block text-sm text-gray-400">
+                    Nombre
+                  </label>
+                  <input
+                    id={nameId}
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 text-white"
+                    placeholder="Tu nombre…"
+                  />
+
+                  {message && (
+                    <p
+                      role={message.type === "success" ? "status" : "alert"}
+                      className={`text-sm ${
+                        message.type === "success" ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {message.text}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="w-full rounded-xl bg-white text-black font-semibold py-3 disabled:opacity-60"
+                  >
+                    {updating ? "Guardando…" : "Guardar cambios"}
+                  </button>
+                </fieldset>
+              </form>
             </div>
+          </section>
 
-            <hr className="border-white/5" />
-
-            {/* Input de Nombre */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-                Nombre en la pista
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all placeholder:text-gray-700"
-                placeholder="Escribe tu nombre..."
-                required
-              />
-            </div>
-
-            {/* Input de Email (Informativo) */}
-            <div className="space-y-2 opacity-60">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-                Email vinculado
-              </label>
-              <input
-                type="email"
-                value={user?.email || ""}
-                disabled
-                className="w-full bg-transparent border border-white/5 rounded-2xl px-5 py-4 text-gray-400 cursor-not-allowed"
-              />
-            </div>
-
-            {/* Mensajes de Feedback */}
-            {message && (
-              <div className={`p-4 rounded-2xl text-center text-sm font-medium animate-in fade-in slide-in-from-bottom-2 ${
-                message.includes("éxito") 
-                  ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                  : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
-                {message}
-              </div>
-            )}
-
-            {/* Botón Guardar */}
+          <section className="mt-6">
             <button
-              type="submit"
-              disabled={updating}
-              className="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-yellow-500 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-wait shadow-xl shadow-white/5 hover:shadow-yellow-500/20"
+              type="button"
+              onClick={handleSignOut}
+              className="w-full rounded-xl border border-white/10 py-3 text-sm text-gray-300 hover:text-white"
             >
-              {updating ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+              Cerrar sesión
             </button>
-          </form>
+          </section>
         </div>
-
-        {/* Botón de Cerrar Sesión (Opcional pero recomendado) */}
-        <button 
-          onClick={() => auth.signOut()}
-          className="w-full mt-8 py-4 text-sm text-gray-500 hover:text-red-400 transition-colors font-medium"
-        >
-          Cerrar sesión de forma segura
-        </button>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
