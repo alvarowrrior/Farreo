@@ -70,16 +70,16 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: any) {
   const getTranslation = () => {
     switch (snap) {
       case "full": return "10vh";
-      case "mid": return "55vh";
-      case "closed": return "100vh";
-      default: return "100vh";
+      case "mid": return "80vh";
+      case "closed": return "110vh";
+      default: return "110vh";
     }
   };
 
   return (
     <div className="absolute inset-0 z-50 pointer-events-none flex justify-center">
       <div
-        className="pointer-events-auto w-full sm:w-[90%] md:w-[550px] bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-t-[3rem] shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="pointer-events-auto w-full sm:w-[90%] md:w-[1200px] bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-t-[3rem] shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: `translateY(${getTranslation()})` }}
       >
         <div className="w-full pt-4 pb-2 cursor-pointer group" onClick={handleToggle}>
@@ -101,7 +101,7 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: any) {
 function PanelContent({ local }: { local: Local }) {
   return (
     <article className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden bg-zinc-800 mt-4 shadow-2xl group">
+      <div className="relative aspect-video w-full rounded-[1rem] overflow-hidden bg-zinc-800 mt-4 shadow-2xl group">
         {local.fotoUrl ? (
           <Image
             src={local.fotoUrl}

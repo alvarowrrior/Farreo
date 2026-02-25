@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { getLocales, type Local } from "@/lib/locales";
 
 interface MapProps {
@@ -11,15 +12,13 @@ interface MapProps {
 export default function MapNearMe({ onSelectLocal }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
     if (mapRef.current || !mapContainerRef.current) return;
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      console.error("Falta NEXT_PUBLIC_MAPBOX_TOKEN");
-      return;
-    }
+    if (!token) return;
 
     mapboxgl.accessToken = token;
 
@@ -28,26 +27,22 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
       style: "mapbox://styles/mapbox/dark-v11",
       center: [-3.7038, 40.4168], // Madrid
       zoom: 14,
-      pitch: 0,
-      bearing: 0,
       antialias: true,
     });
 
     mapRef.current = map;
 
-    // --- CONTROL DE GEOLOCALIZACIÓN ---
     const geolocate = new mapboxgl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: false, // 👈 importante para evitar sensación de deslizamiento
+      trackUserLocation: true,
       showUserHeading: true,
     });
-
     map.addControl(geolocate, "bottom-right");
 
-    map.on("load", () => {
+    map.on("load", async () => {
       map.resize();
       geolocate.trigger();
-      renderWaypoints(map);
+      await renderWaypoints(map);
     });
 
     return () => {
@@ -56,50 +51,54 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
     };
   }, []);
 
-  // ---------- WAYPOINTS ----------
   async function renderWaypoints(map: mapboxgl.Map) {
     try {
       const locales = await getLocales();
+      
+      markersRef.current.forEach(m => m.remove());
+      markersRef.current = [];
 
       locales.forEach((local) => {
-        if (typeof local.lat !== "number" || typeof local.lng !== "number")
-          return;
+        if (!local.lat || !local.lng) return;
 
-        // Elemento visual del marcador
-        const el = document.createElement("button");
-        el.type = "button";
-        el.className = "waypoint-marker";
-        el.setAttribute("aria-label", `Ver ${local.nombre}`);
+        // 1. Contenedor del marcador
+        const container = document.createElement("div");
+        container.className = "marker-container"; 
 
-        // 🔒 Evita que el mapa arrastre cuando tocas el waypoint
-        const stop = (e: Event) => {
-          e.preventDefault();
+        // 2. El punto naranja
+        const dot = document.createElement("div");
+        dot.className = "marker-dot";
+        container.appendChild(dot);
+
+        // 3. La etiqueta de texto
+        const label = document.createElement("div");
+        label.className = "marker-label";
+        label.innerText = local.nombre;
+        container.appendChild(label);
+
+        // Evento Click
+        container.addEventListener("click", (e) => {
           e.stopPropagation();
-        };
-        el.addEventListener("pointerdown", stop, { passive: false });
-        el.addEventListener("touchstart", stop, { passive: false });
+          onSelectLocal?.(local);
+          map.flyTo({
+            center: [local.lng, local.lat],
+            zoom: 16.5,
+            duration: 1000,
+            essential: true,
+            padding: { bottom: 150 }
+          });
+        });
 
-        const marker = new mapboxgl.Marker({
-          element: el,
-          anchor: "center",
+        // CLAVE: Usamos anchor center para que el punto naranja 
+        // sea el eje de rotación y zoom.
+        const marker = new mapboxgl.Marker({ 
+          element: container,
+          anchor: "center" 
         })
           .setLngLat([local.lng, local.lat])
           .addTo(map);
 
-        // Click estable
-        marker.getElement().addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          onSelectLocal?.(local);
-
-          map.flyTo({
-            center: [local.lng, local.lat],
-            zoom: 16,
-            duration: 800,
-            essential: true,
-          });
-        });
+        markersRef.current.push(marker);
       });
     } catch (e) {
       console.error("Error cargando waypoints:", e);
@@ -107,27 +106,8 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
   }
 
   return (
-    <div className="relative w-full h-full min-h-[400px] overflow-hidden bg-black">
+    <div className="relative w-full h-full min-h-[400px] bg-zinc-900">
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* --- ESTILO WAYPOINTS --- */}
-      <style jsx global>{`
-        .waypoint-marker {
-          width: 18px;
-          height: 18px;
-          background: #f59e0b;
-          border: 3px solid white;
-          border-radius: 999px;
-          cursor: pointer;
-          box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
-        }
-
-        .waypoint-marker:hover {
-          background: #ffffff;
-          border-color: #f59e0b;
-          box-shadow: 0 0 18px rgba(255, 255, 255, 0.7);
-        }
-      `}</style>
     </div>
   );
 }
