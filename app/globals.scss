@@ -13,6 +13,7 @@
 @use "../styles/pages/explore";
 @use "../styles/pages/buscar";
 @use "../styles/pages/profile";
+@use "../styles/pages/admin-dashboard";
 
 // 2. Plugins externos (después de los @use)
 @import "mapbox-gl/dist/mapbox-gl.css";

@@ -5,6 +5,12 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
+// LISTA DE ADMINISTRADORES AUTORIZADOS
+const ADMIN_EMAILS = [
+  "guerrerogonzalez.alvaro@gmail.com",
+  // Añade más correos aquí si lo necesitas
+];
+
 function Avatar({ user }: { user: User }) {
   const photo = user.photoURL;
   const name = user.displayName ?? user.email ?? "Usuario";
@@ -37,6 +43,7 @@ function Avatar({ user }: { user: User }) {
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email) : false;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -103,6 +110,16 @@ export default function Header() {
                   >
                     Perfil
                   </Link>
+
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="header__dropdown-link"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Panel Admin
+                    </Link>
+                  )}
 
                   <button
                     onClick={logout}
