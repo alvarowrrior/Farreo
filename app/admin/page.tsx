@@ -125,9 +125,12 @@ export default function AdminDashboardPage() {
       // Ocultar mensaje exitoso después de 3 segundos
       setTimeout(() => setMessage(null), 3000);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al añadir local:", error);
-      setMessage({ type: "error", text: "Hubo un error al guardar. Revisa la consola." });
+
+      // Extraemos el mensaje real de Firebase si existe, sino un mensaje genérico.
+      const errorMessage = error?.message || "Error desconocido al contactar con Firebase.";
+      setMessage({ type: "error", text: `Error: ${errorMessage}` });
     } finally {
       setLoading(false);
     }
