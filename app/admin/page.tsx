@@ -23,6 +23,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [fotosLocales, setFotosLocales] = useState<File[]>([]);
   const [fotosPreview, setFotosPreview] = useState<string[]>([]);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -75,6 +76,12 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setAudioFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthorized) return;
@@ -97,7 +104,16 @@ export default function AdminDashboardPage() {
         fotosUrls.push(downloadUrl);
       }
 
-      // 2. Guardar los datos en Firestore (con el array de fotos)
+      // 1.5 Subir el audio a Firebase Storage si existe
+      let audioDownloadUrl = "";
+      if (audioFile) {
+        const audioName = `${Date.now()}_${audioFile.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+        const audioRef = ref(storage, `locales/audio/${audioName}`);
+        await uploadBytes(audioRef, audioFile);
+        audioDownloadUrl = await getDownloadURL(audioRef);
+      }
+
+      // 2. Guardar los datos en Firestore (con el array de fotos y el audio)
       await addDoc(collection(db, "locales"), {
         nombre: formData.nombre.trim(),
         tipo: formData.tipo,
@@ -110,6 +126,7 @@ export default function AdminDashboardPage() {
         web: formData.web.trim(),
         telefono: formData.telefono.trim(),
         fotos: fotosUrls, // <-- Array de strings puro
+        audioUrl: audioDownloadUrl, // <-- URL del MP3 o vacío
         createdAt: new Date(),
         createdBy: user?.email, // Auditoría
       });
@@ -121,6 +138,7 @@ export default function AdminDashboardPage() {
       });
       setFotosLocales([]);
       setFotosPreview([]);
+      setAudioFile(null);
 
       // Ocultar mensaje exitoso después de 3 segundos
       setTimeout(() => setMessage(null), 3000);
@@ -289,6 +307,35 @@ export default function AdminDashboardPage() {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+
+              {/* UPLOAD MP3 AUDIO SECTION */}
+              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                <label className="admin-dashboard__label">Canción del Local (MP3 opcional para "¿Qué se escucha aquí?")</label>
+
+                <div className="admin-dashboard__file-input-wrapper" style={{ minHeight: '80px', padding: '1.5rem' }}>
+                  <input
+                    type="file"
+                    accept="audio/mpeg, audio/mp3"
+                    onChange={handleAudioChange}
+                    className="admin-dashboard__file-input"
+                  />
+                  <div className="admin-dashboard__file-label">
+                    <span className="admin-dashboard__file-label-icon">🎵</span>
+                    <span className="admin-dashboard__file-label-title">
+                      {audioFile ? `Cargado: ${audioFile.name}` : 'Haz clic para subir un archivo MP3'}
+                    </span>
+                  </div>
+                </div>
+                {audioFile && (
+                  <button
+                    type="button"
+                    onClick={() => setAudioFile(null)}
+                    style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Eliminar canción
+                  </button>
                 )}
               </div>
 

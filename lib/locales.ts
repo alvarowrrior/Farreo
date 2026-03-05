@@ -7,13 +7,14 @@ export type Local = {
   lat: number;
   lng: number;
   tipo: string;
-  fotos: string[]; 
+  fotos: string[];
   descripcion?: string;
   rating?: number;
   numResenas?: number;
   web?: string;
   direccion?: string;
   telefono?: string;
+  audioUrl?: string;
 };
 
 function toNumber(v: any, fallback = 0): number {
@@ -31,13 +32,13 @@ export async function getLocales(): Promise<Local[]> {
 
       // Lógica de fotos con Type Guard para evitar errores de TypeScript
       let listaFotos: string[] = [];
-      
+
       const fotosRaw = d.fotos;
       const fotoUrlRaw = d.fotoUrl;
 
       if (Array.isArray(fotosRaw)) {
         // Usamos un Type Guard (f is string) para que TS sepa que el resultado es string[]
-        listaFotos = fotosRaw.filter((f): f is string => 
+        listaFotos = fotosRaw.filter((f): f is string =>
           typeof f === "string" && f.trim() !== ""
         );
       } else if (typeof fotoUrlRaw === "string" && fotoUrlRaw.trim() !== "") {
@@ -57,6 +58,7 @@ export async function getLocales(): Promise<Local[]> {
         numResenas: typeof d.numResenas === "number" ? d.numResenas : 0,
         web: (d.web as string) ?? "",
         telefono: (d.telefono as string) ?? "",
+        audioUrl: (d.audioUrl as string) ?? "",
       };
     });
   } catch (error) {

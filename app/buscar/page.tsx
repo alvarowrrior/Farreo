@@ -114,6 +114,17 @@ function PanelContent({ local }: { local: Local }) {
 
       <p className="local-detail__desc">"{local.descripcion}"</p>
 
+      {local.audioUrl && (
+        <div className="local-detail__audio-section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>🎵</span> ¿Qué se escucha aquí?
+          </p>
+          <audio controls controlsList="nodownload noplaybackrate" style={{ width: '100%', height: '40px' }} src={local.audioUrl}>
+            Tu navegador no soporta el elemento de audio.
+          </audio>
+        </div>
+      )}
+
       {local.direccion && (
         <div className="local-detail__address">
           <span className="local-detail__address-icon">📍</span>
@@ -122,7 +133,18 @@ function PanelContent({ local }: { local: Local }) {
       )}
 
       <div className="local-detail__actions">
-        <button className="local-detail__btn local-detail__btn--primary">Reservar</button>
+        {local.web ? (
+          <button
+            onClick={() => window.open(local.web, '_blank')}
+            className="local-detail__btn local-detail__btn--primary"
+          >
+            Ir a la Web
+          </button>
+        ) : (
+          <button className="local-detail__btn local-detail__btn--primary">
+            Reservar
+          </button>
+        )}
         <button
           onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${local.lat},${local.lng}`)}
           className="local-detail__btn local-detail__btn--secondary"
