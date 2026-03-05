@@ -54,7 +54,7 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
   async function renderWaypoints(map: mapboxgl.Map) {
     try {
       const locales = await getLocales();
-      
+
       markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
 
@@ -63,7 +63,7 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
 
         // 1. Contenedor del marcador
         const container = document.createElement("div");
-        container.className = "marker-container"; 
+        container.className = "marker-container";
 
         // 2. El punto naranja
         const dot = document.createElement("div");
@@ -91,9 +91,9 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
 
         // CLAVE: Usamos anchor center para que el punto naranja 
         // sea el eje de rotación y zoom.
-        const marker = new mapboxgl.Marker({ 
+        const marker = new mapboxgl.Marker({
           element: container,
-          anchor: "center" 
+          anchor: "center"
         })
           .setLngLat([local.lng, local.lat])
           .addTo(map);
@@ -106,8 +106,8 @@ export default function MapNearMe({ onSelectLocal }: MapProps) {
   }
 
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-zinc-900">
-      <div ref={mapContainerRef} className="w-full h-full" />
+    <div className="map-view">
+      <div ref={mapContainerRef} className="map-view__container" />
     </div>
   );
 }

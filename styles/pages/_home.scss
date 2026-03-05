@@ -1,0 +1,67 @@
+@use "../utils/mixins" as mx;
+@use "../variables" as vars;
+
+.home-main {
+    width: 100%;
+    max-width: vars.$max-width-header;
+    margin: 0 auto;
+    padding: 4rem 1.5rem; // py-16 px-6
+    display: flex;
+    flex-direction: column;
+    align-items: center; // Center content horizontally
+    gap: 4rem;
+    min-height: calc(100vh - 80px); // Fill available height minus header
+    justify-content: center; // Center content vertically
+}
+
+.hero {
+    text-align: center;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &__title {
+        font-size: 3rem;
+        font-weight: 900; // font-black
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        font-style: italic;
+
+        // Gradient Text Effect
+        background: linear-gradient(to right, vars.$text-white, vars.$color-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+
+        @include mx.render-from(vars.$bp-md) {
+            font-size: 4.5rem;
+        }
+    }
+
+    &__subtitle {
+        color: vars.$text-gray-400;
+        max-width: 600px;
+        margin: 0 auto;
+        font-size: vars.$font-size-lg;
+        line-height: 1.6;
+        font-weight: 400;
+
+        @include mx.render-from(vars.$bp-md) {
+            font-size: vars.$font-size-xl;
+        }
+    }
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    width: 100%; // Ensure grid takes full width up to max-width
+    max-width: 800px;
+
+    @include mx.render-from(vars.$bp-md) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

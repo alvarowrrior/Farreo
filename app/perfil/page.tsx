@@ -78,105 +78,97 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-[70vh] flex items-center justify-center">
-        <p className="text-sm text-gray-400">Cargando…</p>
+      <main className="profile-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <p className="profile-page__subtitle">Cargando…</p>
       </main>
     );
   }
 
   return (
-    <>
-      <header className="px-6 pt-10">
-        <nav className="max-w-xl mx-auto">
-          <Link href="/" className="text-sm text-gray-500 hover:text-white">
-            ← Volver
-          </Link>
-        </nav>
+    <main className="profile-page">
+      <header className="profile-page__header">
+        <Link href="/" className="profile-page__back-link">
+          ← Volver
+        </Link>
       </header>
 
-      <main className="px-6 pb-12">
-        <div className="max-w-xl mx-auto mt-6">
-          <h1 className="text-2xl font-bold text-white">Mi perfil</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Actualiza tu nombre público.
-          </p>
+      <section>
+        <h1 className="profile-page__title">Mi perfil</h1>
+        <p className="profile-page__subtitle">
+          Actualiza tu nombre público.
+        </p>
 
-          <section className="mt-8">
-            <div className="rounded-2xl border border-white/10 p-6">
-              <div className="flex items-center gap-4">
-                {user?.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt="Foto de perfil"
-                    className="h-14 w-14 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-14 w-14 rounded-full bg-white/10 flex items-center justify-center text-white font-semibold">
-                    {(displayName?.[0] ?? "F").toUpperCase()}
-                  </div>
-                )}
+        <div className="profile-page__card">
+          <div className="profile-page__user-info">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt="Foto de perfil"
+                className="profile-page__avatar"
+              />
+            ) : (
+              <div className="profile-page__avatar">
+                {(displayName?.[0] ?? "F").toUpperCase()}
+              </div>
+            )}
 
-                <div>
-                  <p className="text-white font-medium">
-                    {displayName || "Usuario de Farreo"}
-                  </p>
-                  <p className="text-sm text-gray-400">{user?.email ?? ""}</p>
-                </div>
+            <div className="profile-page__details">
+              <p className="profile-page__name">
+                {displayName || "Usuario de Farreo"}
+              </p>
+              <p className="profile-page__email">{user?.email ?? ""}</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleUpdate} className="profile-page__form">
+            <fieldset>
+              <legend className="profile-page__form-legend">
+                Datos públicos
+              </legend>
+
+              <div className="profile-page__form-group">
+                <label htmlFor={nameId} className="profile-page__label">
+                  Nombre
+                </label>
+                <input
+                  id={nameId}
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  required
+                  className="profile-page__input"
+                  placeholder="Tu nombre…"
+                />
               </div>
 
-              <form onSubmit={handleUpdate} className="mt-6">
-                <fieldset className="space-y-3">
-                  <legend className="text-sm font-medium text-white">
-                    Datos públicos
-                  </legend>
+              {message && (
+                <p
+                  role={message.type === "success" ? "status" : "alert"}
+                  className={`profile-page__message profile-page__message--${message.type}`}
+                >
+                  {message.text}
+                </p>
+              )}
 
-                  <label htmlFor={nameId} className="block text-sm text-gray-400">
-                    Nombre
-                  </label>
-                  <input
-                    id={nameId}
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 text-white"
-                    placeholder="Tu nombre…"
-                  />
-
-                  {message && (
-                    <p
-                      role={message.type === "success" ? "status" : "alert"}
-                      className={`text-sm ${
-                        message.type === "success" ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {message.text}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="w-full rounded-xl bg-white text-black font-semibold py-3 disabled:opacity-60"
-                  >
-                    {updating ? "Guardando…" : "Guardar cambios"}
-                  </button>
-                </fieldset>
-              </form>
-            </div>
-          </section>
-
-          <section className="mt-6">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="w-full rounded-xl border border-white/10 py-3 text-sm text-gray-300 hover:text-white"
-            >
-              Cerrar sesión
-            </button>
-          </section>
+              <button
+                type="submit"
+                disabled={updating}
+                className="profile-page__btn-submit"
+              >
+                {updating ? "Guardando…" : "Guardar cambios"}
+              </button>
+            </fieldset>
+          </form>
         </div>
-      </main>
-    </>
+
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="profile-page__btn-signout"
+        >
+          Cerrar sesión
+        </button>
+      </section>
+    </main>
   );
 }

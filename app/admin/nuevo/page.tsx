@@ -9,7 +9,7 @@ import imageCompression from "browser-image-compression";
 type LocalForm = {
   nombre: string;
   tipo: "discoteca" | "bar" | "pub" | "after" | "otro";
-  lat: string; // input string -> convertimos a number al guardar
+  lat: string;
   lng: string;
   direccion: string;
   descripcion: string;
@@ -21,7 +21,7 @@ function slugify(name: string) {
     .trim()
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // quitar acentos
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
 }
@@ -31,7 +31,7 @@ function isFiniteNumber(n: number) {
 }
 
 export default function NuevoLocalPage() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]); // ✅ Cambio a array
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string>("");
 
@@ -51,63 +51,49 @@ export default function NuevoLocalPage() {
   const errors = useMemo(() => {
     const e: string[] = [];
     if (!form.nombre.trim()) e.push("El nombre es obligatorio.");
-    if (!isFiniteNumber(latNum) || latNum < -90 || latNum > 90)
-      e.push("Latitud inválida (debe estar entre -90 y 90).");
-    if (!isFiniteNumber(lngNum) || lngNum < -180 || lngNum > 180)
-      e.push("Longitud inválida (debe estar entre -180 y 180).");
+    if (!isFiniteNumber(latNum) || latNum < -90 || latNum > 90) e.push("Latitud inválida.");
+    if (!isFiniteNumber(lngNum) || lngNum < -180 || lngNum > 180) e.push("Longitud inválida.");
 
-    if (form.web.trim()) {
-      try {
-        // Acepta sin https (lo arreglamos al guardar)
-        const w = form.web.trim();
-        const normalized = w.startsWith("http") ? w : `https://${w}`;
-        new URL(normalized);
-      } catch {
-        e.push("La web no parece una URL válida.");
-      }
-    }
-
-    // No obligatoria, pero si hay archivo, validamos tamaño/tipo básicos
-    if (file) {
-      if (!file.type.startsWith("image/")) e.push("El archivo debe ser una imagen.");
-      const maxMB = 12;
-      if (file.size > maxMB * 1024 * 1024) e.push(`La imagen supera ${maxMB}MB.`);
+    if (files.length > 0) {
+      files.forEach((f, i) => {
+        if (!f.type.startsWith("image/")) e.push(`El archivo ${i + 1} no es una imagen.`);
+        if (f.size > 12 * 1024 * 1024) e.push(`La imagen ${f.name} supera los 12MB.`);
+      });
     }
     return e;
-  }, [form.nombre, latNum, lngNum, form.web, file]);
+  }, [form.nombre, latNum, lngNum, files]);
 
   const canSubmit = errors.length === 0 && !loading;
 
-  const onChange =
-    <K extends keyof LocalForm>(key: K) =>
-    (value: LocalForm[K]) =>
-      setForm((p) => ({ ...p, [key]: value }));
+  const onChange = (key: keyof LocalForm) => (value: string) =>
+    setForm((p) => ({ ...p, [key]: value }));
 
-  async function uploadPhotoIfAny(localName: string, file: File) {
-    setStatus("Optimizando imagen...");
-
-    const compressed = await imageCompression(file, {
-      maxSizeMB: 0.8,
-      maxWidthOrHeight: 1600,
-      useWebWorker: true,
-      fileType: "image/webp", // fuerza a webp
-      initialQuality: 0.86,
-    });
-
+  // ✅ Función para subir múltiples fotos
+  async function uploadPhotos(localName: string, filesToUpload: File[]) {
+    const urls: string[] = [];
     const safeName = slugify(localName) || "local";
-    const fileName = `${Date.now()}_${safeName}.webp`;
-    const storageRef = ref(storage, `locales/${fileName}`);
 
-    setStatus("Subiendo imagen...");
-    await uploadBytes(storageRef, compressed, {
-      contentType: "image/webp",
-      cacheControl: "public,max-age=31536000",
-    });
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      setStatus(`Optimizando imagen ${i + 1} de ${filesToUpload.length}...`);
 
-    setStatus("Obteniendo URL...");
-    const url = await getDownloadURL(storageRef);
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 0.8,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+        fileType: "image/webp",
+      });
 
-    return { url, path: storageRef.fullPath };
+      const fileName = `${Date.now()}_${safeName}_${i}.webp`;
+      const storageRef = ref(storage, `locales/${fileName}`);
+
+      setStatus(`Subiendo imagen ${i + 1}...`);
+      await uploadBytes(storageRef, compressed, { contentType: "image/webp" });
+      
+      const url = await getDownloadURL(storageRef);
+      urls.push(url);
+    }
+    return urls;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,24 +101,16 @@ export default function NuevoLocalPage() {
     if (!canSubmit) return;
 
     setLoading(true);
-    setStatus("");
-
     try {
-      let fotoUrl = "";
-      let fotoPath = "";
-
-      if (file) {
-        const uploaded = await uploadPhotoIfAny(form.nombre, file);
-        fotoUrl = uploaded.url;
-        fotoPath = uploaded.path;
+      let urls: string[] = [];
+      if (files.length > 0) {
+        urls = await uploadPhotos(form.nombre, files);
       }
 
       setStatus("Guardando en Firestore...");
 
       const webNormalized = form.web.trim()
-        ? form.web.trim().startsWith("http")
-          ? form.web.trim()
-          : `https://${form.web.trim()}`
+        ? form.web.trim().startsWith("http") ? form.web.trim() : `https://${form.web.trim()}`
         : "";
 
       await addDoc(collection(db, "locales"), {
@@ -143,34 +121,24 @@ export default function NuevoLocalPage() {
         direccion: form.direccion.trim(),
         descripcion: form.descripcion.trim(),
         web: webNormalized,
-
-        fotoUrl, // ✅ URL HTTPS de downloadURL
-        fotoPath, // útil para borrar/gestionar luego
+        
+        // ✅ Guardamos el array de fotos para el carrusel
+        fotos: urls, 
+        // Por compatibilidad con el código anterior, guardamos la primera como fotoUrl
+        fotoUrl: urls.length > 0 ? urls[0] : "",
 
         rating: 4.5,
         numResenas: 0,
-
-        createdAt: serverTimestamp(), // mejor que new Date()
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
-      setStatus("");
-      alert("¡Local subido con éxito!");
-
-      // reset limpio
-      setForm({
-        nombre: "",
-        tipo: "discoteca",
-        lat: "",
-        lng: "",
-        direccion: "",
-        descripcion: "",
-        web: "",
-      });
-      setFile(null);
+      alert("¡Local con carrusel subido con éxito!");
+      setForm({ nombre: "", tipo: "discoteca", lat: "", lng: "", direccion: "", descripcion: "", web: "" });
+      setFiles([]);
     } catch (err) {
       console.error(err);
-      alert("Error al subir. Mira la consola (F12) para ver el detalle.");
+      alert("Error al subir.");
     } finally {
       setLoading(false);
       setStatus("");
@@ -180,45 +148,19 @@ export default function NuevoLocalPage() {
   return (
     <main className="min-h-screen bg-black p-8 text-white">
       <div className="max-w-xl mx-auto space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-black text-yellow-500">Añadir local</h1>
-          <p className="text-zinc-400">
-            Sube un local con coordenadas correctas. La foto se optimiza a WebP y se guarda en
-            Firebase Storage.
-          </p>
+        <header>
+          <h1 className="text-3xl font-black text-yellow-500 italic uppercase">Nuevo Local</h1>
+          <p className="text-zinc-500 text-sm tracking-tight">Sube múltiples imágenes para activar el carrusel.</p>
         </header>
-
-        {errors.length > 0 && (
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4">
-            <p className="font-bold text-red-400 mb-2">Revisa esto:</p>
-            <ul className="list-disc ml-5 text-zinc-300 space-y-1">
-              {errors.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             required
             value={form.nombre}
-            placeholder="Nombre"
-            className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
+            placeholder="Nombre del local"
+            className="bg-zinc-900 border border-white/5 p-4 rounded-2xl outline-none focus:border-yellow-500/50 transition-all"
             onChange={(e) => onChange("nombre")(e.target.value)}
           />
-
-          <select
-            value={form.tipo}
-            className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
-            onChange={(e) => onChange("tipo")(e.target.value as LocalForm["tipo"])}
-          >
-            <option value="discoteca">Discoteca</option>
-            <option value="bar">Bar</option>
-            <option value="pub">Pub</option>
-            <option value="after">After</option>
-            <option value="otro">Otro</option>
-          </select>
 
           <div className="grid grid-cols-2 gap-4">
             <input
@@ -226,8 +168,8 @@ export default function NuevoLocalPage() {
               type="number"
               step="any"
               value={form.lat}
-              placeholder="Latitud (ej: 38.705)"
-              className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
+              placeholder="Latitud"
+              className="bg-zinc-900 border border-white/5 p-4 rounded-2xl outline-none"
               onChange={(e) => onChange("lat")(e.target.value)}
             />
             <input
@@ -235,62 +177,59 @@ export default function NuevoLocalPage() {
               type="number"
               step="any"
               value={form.lng}
-              placeholder="Longitud (ej: -0.473)"
-              className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
+              placeholder="Longitud"
+              className="bg-zinc-900 border border-white/5 p-4 rounded-2xl outline-none"
               onChange={(e) => onChange("lng")(e.target.value)}
             />
           </div>
 
-          <input
-            value={form.direccion}
-            placeholder="Dirección (opcional)"
-            className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
-            onChange={(e) => onChange("direccion")(e.target.value)}
-          />
-
-          <input
-            value={form.web}
-            placeholder="Web (opcional) ej: farreo.app"
-            className="bg-zinc-800 p-3 rounded-xl outline-none focus:ring-2 focus:ring-yellow-500/40"
-            onChange={(e) => onChange("web")(e.target.value)}
-          />
-
           <textarea
             value={form.descripcion}
-            placeholder="Descripción (opcional)"
-            className="bg-zinc-800 p-3 rounded-xl h-28 outline-none focus:ring-2 focus:ring-yellow-500/40"
+            placeholder="Descripción del local..."
+            className="bg-zinc-900 border border-white/5 p-4 rounded-2xl h-32 outline-none"
             onChange={(e) => onChange("descripcion")(e.target.value)}
           />
 
-          <div className="rounded-2xl border border-white/10 bg-zinc-900 p-4 space-y-2">
-            <label className="block text-sm font-bold text-zinc-300">
-              Foto del local (opcional)
+          <div className="p-6 rounded-3xl border-2 border-dashed border-white/10 bg-zinc-900/50 space-y-4">
+            <label className="block text-center cursor-pointer">
+              <span className="text-yellow-500 font-bold block mb-1">Seleccionar Fotos</span>
+              <span className="text-zinc-500 text-xs uppercase tracking-widest">Puedes elegir varias a la vez</span>
+              <input
+                type="file"
+                multiple // ✅ CLAVE: permite elegir varios archivos
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const selected = Array.from(e.target.files || []);
+                  setFiles(selected);
+                }}
+              />
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              className="bg-zinc-800 p-3 rounded-xl w-full"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-            {file && (
-              <p className="text-xs text-zinc-400">
-                Seleccionada: <span className="text-zinc-200">{file.name}</span> (
-                {(file.size / (1024 * 1024)).toFixed(2)} MB)
-              </p>
+
+            {files.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                {files.map((f, i) => (
+                  <div key={i} className="aspect-square bg-zinc-800 rounded-lg flex items-center justify-center text-[10px] text-zinc-500 p-2 text-center overflow-hidden border border-white/5">
+                    {f.name}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
           <button
             disabled={!canSubmit}
-            className="bg-white text-black font-black p-4 rounded-xl hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="bg-white text-black font-black p-5 rounded-[2rem] hover:bg-yellow-500 disabled:opacity-20 transition-all uppercase italic tracking-tighter"
           >
-            {loading ? "Subiendo..." : "Guardar local"}
+            {loading ? status : "Publicar Local"}
           </button>
-
-          {loading && status && (
-            <p className="text-center text-sm text-zinc-400">{status}</p>
-          )}
         </form>
+
+        {errors.length > 0 && (
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
+            {errors.map((err, i) => <p key={i} className="text-red-400 text-xs font-bold uppercase">× {err}</p>)}
+          </div>
+        )}
       </div>
     </main>
   );

@@ -1,0 +1,29 @@
+@use "../variables" as vars;
+@use "../utils/mixins" as mx;
+
+.avatar {
+    &__img {
+        height: 2.25rem; // h-9
+        width: 2.25rem; // w-9
+        border-radius: 9999px; // rounded-full
+        border: 1px solid vars.$border-color; // border-white/10
+        object-fit: cover;
+    }
+
+    &__fallback {
+        height: 2.25rem; // h-9
+        width: 2.25rem; // w-9
+        border-radius: 9999px; // rounded-full
+        border: 1px solid vars.$border-color; // border-white/10
+        background-color: vars.$border-color; // bg-white/10
+
+        // grid place-items-center
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: vars.$font-size-xs;
+        font-weight: 600; // font-semibold
+        color: vars.$text-white;
+    }
+}

@@ -1,0 +1,37 @@
+// ==========================================
+// Mixins de Utilidad
+// ==========================================
+
+// Centrado absoluto rápido (Flexbox)
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+// Media Queries fáciles (Mobile First)
+@mixin render-to($breakpoint) {
+    @media (max-width: #{$breakpoint}) {
+        @content;
+    }
+}
+
+@mixin render-from($breakpoint) {
+    @media (min-width: #{$breakpoint}) {
+        @content;
+    }
+}
+
+// Truncar texto con puntos suspensivos
+@mixin text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Backdrop Blur (Estilo Glassmorphism)
+@mixin glass-effect($blur: 12px, $bg-color: rgba(0, 0, 0, 0.95)) {
+    background-color: $bg-color;
+    backdrop-filter: blur($blur);
+    -webkit-backdrop-filter: blur($blur);
+}

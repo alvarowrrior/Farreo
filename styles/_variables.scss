@@ -1,0 +1,39 @@
+// ==========================================
+// Variables Globales del Sistema de Diseño
+// ==========================================
+
+// -- Colores Base (Premium Dark Mode)
+$bg-dark: #09090b; // Zinc 950 - Un negro suave más elegante
+$bg-dark-elevated: #18181b; // Zinc 900
+$text-white: #fafafa;
+$text-gray-200: #e4e4e7;
+$text-gray-400: #a1a1aa;
+$color-primary: #f59e0b; // Amber 500
+$color-primary-hover: #fbbf24; // Amber 400
+$color-danger: #ef4444; // Red 500
+
+// -- Bordes y Divisores
+$border-color: rgba(255, 255, 255, 0.08);
+$border-hover: rgba(255, 255, 255, 0.15);
+
+// -- Tipografía
+$font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+$font-size-xs: 0.75rem; // 12px
+$font-size-sm: 0.875rem; // 14px
+$font-size-base: 1rem; // 16px
+$font-size-lg: 1.125rem; // 18px
+$font-size-xl: 1.25rem; // 20px
+$font-size-2xl: 1.5rem; // 24px
+$font-size-3xl: 1.875rem; // 30px
+$font-size-4xl: 2.25rem; // 36px
+
+// -- Espaciados y Layout
+$max-width-header: 72rem; // 1152px (max-w-6xl equivale a 72rem en Tailwind)
+$z-index-header: 50;
+$z-index-dropdown: 60;
+
+// -- Breakpoints
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1280px;

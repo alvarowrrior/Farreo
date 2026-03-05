@@ -47,19 +47,19 @@ export default function NuevoLocalPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-2xl mx-auto bg-zinc-900 p-8 rounded-[2rem] border border-white/10">
-        <h1 className="text-3xl font-black uppercase italic mb-6">Añadir Nuevo Local</h1>
-        
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <label className="text-xs font-bold uppercase text-gray-500">Nombre del Local</label>
-            <input required name="nombre" value={formData.nombre} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" placeholder="Ej: Kapital" />
+    <main className="admin-page">
+      <div className="admin-panel">
+        <h1 className="admin-panel__title">Añadir Nuevo Local</h1>
+
+        <form onSubmit={handleSubmit} className="admin-form">
+          <div className="admin-form__group admin-form__group--full">
+            <label className="admin-form__label">Nombre del Local</label>
+            <input required name="nombre" value={formData.nombre} onChange={handleChange} className="admin-form__input" placeholder="Ej: Kapital" />
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase text-gray-500">Tipo</label>
-            <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1">
+          <div className="admin-form__group">
+            <label className="admin-form__label">Tipo</label>
+            <select name="tipo" value={formData.tipo} onChange={handleChange} className="admin-form__select">
               <option value="bar">Bar</option>
               <option value="discoteca">Discoteca</option>
               <option value="restaurante">Restaurante</option>
@@ -67,40 +67,40 @@ export default function NuevoLocalPage() {
             </select>
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase text-gray-500">Rating (1-5)</label>
-            <input name="rating" type="number" step="0.1" value={formData.rating} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" />
+          <div className="admin-form__group">
+            <label className="admin-form__label">Rating (1-5)</label>
+            <input name="rating" type="number" step="0.1" value={formData.rating} onChange={handleChange} className="admin-form__input" />
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase text-gray-500">Latitud</label>
-            <input required name="lat" type="number" step="any" value={formData.lat} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" placeholder="40.4168" />
+          <div className="admin-form__group">
+            <label className="admin-form__label">Latitud</label>
+            <input required name="lat" type="number" step="any" value={formData.lat} onChange={handleChange} className="admin-form__input" placeholder="40.4168" />
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase text-gray-500">Longitud</label>
-            <input required name="lng" type="number" step="any" value={formData.lng} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" placeholder="-3.7038" />
+          <div className="admin-form__group">
+            <label className="admin-form__label">Longitud</label>
+            <input required name="lng" type="number" step="any" value={formData.lng} onChange={handleChange} className="admin-form__input" placeholder="-3.7038" />
           </div>
 
-          <div className="col-span-2">
-            <label className="text-xs font-bold uppercase text-gray-500">Dirección Real</label>
-            <input name="direccion" value={formData.direccion} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" placeholder="Calle Falsa 123, Madrid" />
+          <div className="admin-form__group admin-form__group--full">
+            <label className="admin-form__label">Dirección Real</label>
+            <input name="direccion" value={formData.direccion} onChange={handleChange} className="admin-form__input" placeholder="Calle Falsa 123, Madrid" />
           </div>
 
-          <div className="col-span-2">
-            <label className="text-xs font-bold uppercase text-gray-500">URL de la Foto</label>
-            <input name="fotoUrl" value={formData.fotoUrl} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1" placeholder="https://..." />
+          <div className="admin-form__group admin-form__group--full">
+            <label className="admin-form__label">URL de la Foto</label>
+            <input name="fotoUrl" value={formData.fotoUrl} onChange={handleChange} className="admin-form__input" placeholder="https://..." />
           </div>
 
-          <div className="col-span-2">
-            <label className="text-xs font-bold uppercase text-gray-500">Descripción</label>
-            <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="w-full bg-black border border-white/10 p-3 rounded-xl mt-1 h-24" placeholder="Cuéntanos algo del local..." />
+          <div className="admin-form__group admin-form__group--full">
+            <label className="admin-form__label">Descripción</label>
+            <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="admin-form__textarea" placeholder="Cuéntanos algo del local..." />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
-            className="col-span-2 bg-white text-black font-black uppercase py-4 rounded-xl hover:bg-yellow-500 transition-colors disabled:opacity-50"
+            className="admin-form__submit"
           >
             {loading ? "Subiendo..." : "Guardar en Firebase"}
           </button>

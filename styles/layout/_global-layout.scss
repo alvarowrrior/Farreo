@@ -1,0 +1,52 @@
+@use '../variables' as vars;
+
+// Configuración general del cuerpo
+.app-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: vars.$bg-dark; // Usamos tu variable #09090b
+  color: vars.$text-white;
+  -webkit-font-smoothing: antialiased; // antialiased
+}
+
+// El contenedor principal que empuja el footer hacia abajo
+.app-main {
+  flex: 1; // flex-1
+  position: relative;
+  z-index: 0;
+}
+
+// Capas de fondo animadas y texturas
+.app-background {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0; // inset-0
+  z-index: -50;
+  pointer-events: none;
+  overflow: hidden;
+
+  &__lights {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    will-change: transform;
+    // Nota: Aquí debes poner el background o la animación 'night-life' 
+    // que tenías configurada en tu antiguo globals.css
+    // Ejemplo: background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
+  }
+
+  &__noise {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 0.03;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  }
+}

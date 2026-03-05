@@ -38,27 +38,27 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="mx-auto max-w-lg px-6 py-16">
-        <Link href="/" className="text-sm text-gray-300 hover:text-white">
+    <main className="login-page">
+      <div className="login-card">
+        <Link href="/" className="login-card__back">
           ← Volver
         </Link>
 
-        <h1 className="mt-6 text-3xl font-extrabold">Login</h1>
-        <p className="mt-1 text-gray-300 text-sm">
+        <h1 className="login-card__title">Login</h1>
+        <p className="login-card__subtitle">
           Entra con Google para guardar favoritos, realizar reseñas y comprar entradas.
         </p>
 
-        <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="login-card__box">
           {user ? (
             <>
-              <p className="text-sm text-gray-300">Sesión iniciada como:</p>
-              <p className="mt-1 font-semibold">{user.displayName ?? "Usuario"}</p>
-              <p className="text-sm text-gray-400">{user.email ?? ""}</p>
+              <p className="login-card__subtitle">Sesión iniciada como:</p>
+              <p className="login-card__title" style={{ marginTop: '0.25rem', fontSize: '1rem' }}>{user.displayName ?? "Usuario"}</p>
+              <p className="login-card__subtitle">{user.email ?? ""}</p>
 
               <button
                 onClick={logout}
-                className="mt-6 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm hover:bg-black/60"
+                className="login-card__btn login-card__btn--secondary"
               >
                 Cerrar sesión
               </button>
@@ -67,14 +67,14 @@ export default function LoginPage() {
             <button
               onClick={loginWithGoogle}
               disabled={loading}
-              className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-60"
+              className="login-card__btn login-card__btn--primary"
             >
               {loading ? "Abriendo Google..." : "Continuar con Google"}
             </button>
           )}
         </div>
 
-        <p className="mt-4 text-xs text-gray-500">
+        <p className="login-card__footer">
           La información de tu perfil se sincroniza con tu cuenta de Google. Puedes gestionarla desde la configuración de tu cuenta.
         </p>
       </div>

@@ -1,0 +1,87 @@
+@use "../utils/mixins" as mx;
+@use "../variables" as vars;
+
+.login-page {
+    min-height: 100vh;
+    background-color: vars.$bg-dark;
+    color: vars.$text-white;
+}
+
+.login-card {
+    margin: 0 auto;
+    max-width: 32rem; // max-w-lg
+    padding: 4rem 1.5rem; // py-16 px-6
+
+    &__back {
+        font-size: vars.$font-size-sm;
+        color: vars.$text-gray-200;
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: vars.$text-white;
+        }
+    }
+
+    &__title {
+        margin-top: 1.5rem;
+        font-size: 1.875rem; // 3xl
+        font-weight: 800;
+    }
+
+    &__subtitle {
+        margin-top: 0.25rem;
+        color: vars.$text-gray-200;
+        font-size: vars.$font-size-sm;
+    }
+
+    &__box {
+        margin-top: 2rem;
+        border-radius: 1.5rem; // rounded-3xl
+        border: 1px solid vars.$border-color;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 1.5rem; // p-6
+    }
+
+    &__btn {
+        width: 100%;
+        margin-top: 1.5rem;
+        border-radius: 1rem; // rounded-2xl
+        padding: 0.75rem 1rem; // px-4 py-3
+        font-size: vars.$font-size-sm;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s ease, background-color 0.2s ease;
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        &--primary {
+            background-color: vars.$text-white;
+            color: vars.$bg-dark;
+            border: none;
+
+            &:hover:not(:disabled) {
+                opacity: 0.9;
+            }
+        }
+
+        &--secondary {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px solid vars.$border-color;
+            color: vars.$text-white;
+
+            &:hover:not(:disabled) {
+                background-color: rgba(0, 0, 0, 0.6);
+            }
+        }
+    }
+
+    &__footer {
+        margin-top: 1rem;
+        font-size: vars.$font-size-xs;
+        color: vars.$text-gray-400;
+    }
+}

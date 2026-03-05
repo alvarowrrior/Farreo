@@ -21,14 +21,14 @@ function Avatar({ user }: { user: User }) {
       <img
         src={photo}
         alt={name}
-        className="h-9 w-9 rounded-full border border-white/10 object-cover"
+        className="avatar__img"
         referrerPolicy="no-referrer"
       />
     );
   }
 
   return (
-    <div className="h-9 w-9 rounded-full border border-white/10 bg-white/10 grid place-items-center text-xs font-semibold">
+    <div className="avatar__fallback">
       {initials || "U"}
     </div>
   );
@@ -54,51 +54,51 @@ export default function Header() {
        'z-50' lo pone al frente de todo.
        'bg-black' asegura que no sea transparente y se mezcle con el fondo.
     */
-    <header className="relative z-50 border-b border-white/10 bg-black">
-      <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold">
+    <header className="header">
+      <div className="header__container">
+        <Link href="/" className="header__logo">
           Farreo 🍻
         </Link>
 
-        <nav className="flex items-center gap-6 text-sm">
-          <Link href="/explorar" className="hover:opacity-80">
+        <nav className="header__nav">
+          <Link href="/explorar" className="header__link">
             Explorar
           </Link>
-          <Link href="/buscar" className="hover:opacity-80">
+          <Link href="/buscar" className="header__link">
             Buscar
           </Link>
 
           {/* Zona usuario */}
           {user ? (
-            <div className="relative">
+            <div className="header__user">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="flex items-center gap-2 hover:opacity-90"
+                className="header__user-btn"
                 aria-label="Abrir menú de usuario"
               >
                 <Avatar user={user} />
-                <span className="hidden sm:inline text-gray-200 max-w-[160px] truncate">
+                <span className="header__user-name">
                   {user.displayName ?? "Mi cuenta"}
                 </span>
               </button>
 
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-3 w-56 rounded-2xl border border-white/10 bg-black/95 backdrop-blur-md p-2 shadow-2xl"
+                  className="header__dropdown"
                   onMouseLeave={() => setMenuOpen(false)}
                 >
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-semibold truncate">
+                  <div className="header__dropdown-header">
+                    <p className="header__dropdown-name">
                       {user.displayName ?? "Usuario"}
                     </p>
-                    <p className="text-xs text-gray-400 truncate">{user.email ?? ""}</p>
+                    <p className="header__dropdown-email">{user.email ?? ""}</p>
                   </div>
 
-                  <div className="h-px bg-white/10 my-1" />
+                  <div className="header__dropdown-divider" />
 
                   <Link
                     href="/perfil"
-                    className="block rounded-xl px-3 py-2 text-sm hover:bg-white/10"
+                    className="header__dropdown-link"
                     onClick={() => setMenuOpen(false)}
                   >
                     Perfil
@@ -106,7 +106,7 @@ export default function Header() {
 
                   <button
                     onClick={logout}
-                    className="w-full text-left rounded-xl px-3 py-2 text-sm hover:bg-white/10 text-red-400"
+                    className="header__dropdown-btn header__dropdown-btn--danger"
                   >
                     Cerrar sesión
                   </button>
@@ -114,7 +114,7 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <Link href="/login" className="hover:opacity-80">
+            <Link href="/login" className="header__link">
               Login
             </Link>
           )}

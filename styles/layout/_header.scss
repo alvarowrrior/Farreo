@@ -1,0 +1,140 @@
+@use "../variables" as vars;
+@use "../utils/mixins" as mx;
+
+.header {
+  position: sticky; // Sticky para modernidad
+  top: 0;
+  z-index: vars.$z-index-header;
+  border-bottom: 1px solid vars.$border-color;
+  background-color: rgba(9, 9, 11, 0.7); // Glassmorphism
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  &__container {
+    max-width: vars.$max-width-header;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1rem 1.5rem; // py-4 px-6
+    @include mx.flex-center;
+    justify-content: space-between;
+  }
+
+  &__logo {
+    font-size: vars.$font-size-2xl; // 24px (text-2xl) -> Tailwind text-2xl is 24px
+    font-weight: 700; // font-bold
+    color: vars.$text-white;
+    text-decoration: none;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem; // gap-6
+    font-size: vars.$font-size-sm;
+  }
+
+  &__link {
+    color: vars.$text-white;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  // --- Menu de Usuario ---
+  &__user {
+    position: relative;
+  }
+
+  &__user-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; // gap-2
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    padding: 0;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &__user-name {
+    display: none; // sm:inline a traves de media query
+    color: vars.$text-gray-200;
+    max-width: 160px;
+    @include mx.text-truncate;
+
+    @include mx.render-from(vars.$bp-sm) {
+      display: inline;
+    }
+  }
+
+  // --- Dropdown ---
+  &__dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.75rem; // mt-3
+    width: 14rem; // w-56
+    border-radius: 1rem; // rounded-2xl
+    border: 1px solid vars.$border-color;
+    @include mx.glass-effect; // bg-black/95 backdrop-blur-md
+    padding: 0.5rem; // p-2
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); // shadow-2xl
+    z-index: vars.$z-index-dropdown;
+  }
+
+  &__dropdown-header {
+    padding: 0.5rem 0.75rem; // px-3 py-2
+  }
+
+  &__dropdown-name {
+    font-size: vars.$font-size-sm;
+    font-weight: 600; // font-semibold
+    @include mx.text-truncate;
+    color: vars.$text-white;
+    margin: 0;
+  }
+
+  &__dropdown-email {
+    font-size: vars.$font-size-xs;
+    color: vars.$text-gray-400;
+    @include mx.text-truncate;
+    margin: 0;
+  }
+
+  &__dropdown-divider {
+    height: 1px;
+    background-color: vars.$border-color;
+    margin: 0.25rem 0; // my-1
+  }
+
+  &__dropdown-link,
+  &__dropdown-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border-radius: 0.75rem; // rounded-xl
+    padding: 0.5rem 0.75rem; // px-3 py-2
+    font-size: vars.$font-size-sm;
+    color: vars.$text-white;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: vars.$border-hover;
+    }
+  }
+
+  &__dropdown-btn--danger {
+    color: vars.$color-danger; // text-red-400
+  }
+}
