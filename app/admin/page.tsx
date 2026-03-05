@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth, db, storage } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Link from "next/link";
 import Image from "next/image";
+import { getLocales, type Local } from "@/lib/locales";
+import MapSelector from "@/components/MapSelector";
 
 // USAR LA MISMA LISTA PARA PROTEGER LA RUTA
 const ADMIN_EMAILS = [
@@ -25,6 +27,12 @@ export default function AdminDashboardPage() {
   const [fotosPreview, setFotosPreview] = useState<string[]>([]);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"crear" | "gestionar">("crear");
+  const [localesList, setLocalesList] = useState<Local[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [existingFotos, setExistingFotos] = useState<string[]>([]);
+  const [existingAudio, setExistingAudio] = useState<string>("");
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -51,6 +59,60 @@ export default function AdminDashboardPage() {
     });
     return () => unsub();
   }, []);
+
+  const loadLocales = async () => {
+    setLoading(true);
+    const data = await getLocales();
+    setLocalesList(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === "gestionar") {
+      loadLocales();
+    }
+  }, [activeTab]);
+
+  const handleEdit = (local: Local) => {
+    setFormData({
+      nombre: local.nombre,
+      tipo: local.tipo,
+      lat: local.lat.toString(),
+      lng: local.lng.toString(),
+      direccion: local.direccion || "",
+      descripcion: local.descripcion || "",
+      rating: local.rating?.toString() || "4.5",
+      numResenas: local.numResenas?.toString() || "0",
+      web: local.web || "",
+      telefono: local.telefono || "",
+    });
+    setEditingId(local.id);
+    setExistingFotos(local.fotos || []);
+    setExistingAudio(local.audioUrl || "");
+    setFotosPreview([]);
+    setFotosLocales([]);
+    setAudioFile(null);
+    setMessage(null);
+    setActiveTab("crear");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id: string, nombre: string) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar definitivamente el local "${nombre}"? Esta acción es irreversible.`)) return;
+    try {
+      await deleteDoc(doc(db, "locales", id));
+      setMessage({ type: "success", text: `Local "${nombre}" eliminado correctamente.` });
+      loadLocales();
+    } catch (error) {
+      console.error("Error al borrar:", error);
+      setMessage({ type: "error", text: "Error de permisos o conexión al eliminar." });
+    }
+  };
+
+  const removeExistingPhoto = (index: number) => {
+    setExistingFotos(prev => prev.filter((_, i) => i !== index));
+  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -105,16 +167,17 @@ export default function AdminDashboardPage() {
       }
 
       // 1.5 Subir el audio a Firebase Storage si existe
-      let audioDownloadUrl = "";
+      let finalAudio = existingAudio;
       if (audioFile) {
         const audioName = `${Date.now()}_${audioFile.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
         const audioRef = ref(storage, `locales/audio/${audioName}`);
         await uploadBytes(audioRef, audioFile);
-        audioDownloadUrl = await getDownloadURL(audioRef);
+        finalAudio = await getDownloadURL(audioRef);
       }
 
-      // 2. Guardar los datos en Firestore (con el array de fotos y el audio)
-      await addDoc(collection(db, "locales"), {
+      const finalFotos = [...existingFotos, ...fotosUrls];
+
+      const localData = {
         nombre: formData.nombre.trim(),
         tipo: formData.tipo,
         lat: parseFloat(formData.lat),
@@ -125,20 +188,36 @@ export default function AdminDashboardPage() {
         numResenas: parseInt(formData.numResenas),
         web: formData.web.trim(),
         telefono: formData.telefono.trim(),
-        fotos: fotosUrls, // <-- Array de strings puro
-        audioUrl: audioDownloadUrl, // <-- URL del MP3 o vacío
-        createdAt: new Date(),
-        createdBy: user?.email, // Auditoría
-      });
+        fotos: finalFotos,
+        audioUrl: finalAudio,
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, "locales", editingId), {
+          ...localData,
+          updatedAt: new Date(),
+          updatedBy: user?.email,
+        });
+        setMessage({ type: "success", text: "¡Local actualizado con éxito!" });
+      } else {
+        await addDoc(collection(db, "locales"), {
+          ...localData,
+          createdAt: new Date(),
+          createdBy: user?.email,
+        });
+        setMessage({ type: "success", text: "¡Local añadido con éxito!" });
+      }
 
       // 3. Resetear el formulario
-      setMessage({ type: "success", text: "¡Local añadido con éxito!" });
       setFormData({
         nombre: "", tipo: "bar", lat: "", lng: "", direccion: "", descripcion: "", rating: "4.5", numResenas: "0", web: "", telefono: ""
       });
       setFotosLocales([]);
       setFotosPreview([]);
       setAudioFile(null);
+      setEditingId(null);
+      setExistingFotos([]);
+      setExistingAudio("");
 
       // Ocultar mensaje exitoso después de 3 segundos
       setTimeout(() => setMessage(null), 3000);
@@ -206,6 +285,31 @@ export default function AdminDashboardPage() {
           </div>
 
           <div style={{ marginTop: '2rem' }}>
+            <p className="admin-dashboard__label" style={{ marginBottom: '1rem' }}>Menú de Navegación</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <button
+                onClick={() => {
+                  setActiveTab("crear");
+                  setEditingId(null);
+                  setFormData({ nombre: "", tipo: "bar", lat: "", lng: "", direccion: "", descripcion: "", rating: "4.5", numResenas: "0", web: "", telefono: "" });
+                  setExistingFotos([]);
+                  setExistingAudio("");
+                  setMessage(null);
+                }}
+                style={{ padding: '0.8rem', textAlign: 'left', background: activeTab === 'crear' ? '#f1f5f9' : 'transparent', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'crear' ? 600 : 400 }}
+              >
+                {editingId ? "✏️ Editando Local..." : "➕ Añadir Local"}
+              </button>
+              <button
+                onClick={() => { setActiveTab("gestionar"); setMessage(null); }}
+                style={{ padding: '0.8rem', textAlign: 'left', background: activeTab === 'gestionar' ? '#f1f5f9' : 'transparent', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'gestionar' ? 600 : 400 }}
+              >
+                📋 Gestionar Locales
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '2rem' }}>
             <p className="admin-dashboard__label" style={{ marginBottom: '1rem' }}>Estado del Sistema</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.875rem' }}>
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80' }}></span>
@@ -214,9 +318,7 @@ export default function AdminDashboardPage() {
           </div>
         </aside>
 
-        {/* MAIN CONTET: Formulario de añadir local */}
         <div className="admin-dashboard__form-container">
-          <h2 className="admin-dashboard__section-title">Añadir Nuevo Local</h2>
 
           {message && (
             <div className={`profile-page__message profile-page__message--${message.type}`} style={{ marginBottom: '1.5rem' }}>
@@ -224,143 +326,253 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="admin-dashboard__form">
-            <div className="admin-dashboard__form-row">
-              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
-                <label className="admin-dashboard__label">Nombre del Local *</label>
-                <input required name="nombre" value={formData.nombre} onChange={handleChange} className="admin-dashboard__input" placeholder="Ej: Teatro Kapital" />
-              </div>
+          {activeTab === "gestionar" && (
+            <div>
+              <h2 className="admin-dashboard__section-title">Listado de Locales</h2>
+              {loading && <p>Cargando locales...</p>}
+              {!loading && localesList.length === 0 && <p>No hay locales registrados aún.</p>}
 
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Tipo *</label>
-                <select name="tipo" value={formData.tipo} onChange={handleChange} className="admin-dashboard__select">
-                  <option value="discoteca">Discoteca</option>
-                  <option value="club">Club Privado</option>
-                  <option value="bar">Bar de Copas</option>
-                  <option value="pub">Pub / Coctelería</option>
-                  <option value="restaurante">Restaurante Espectáculo</option>
-                </select>
-              </div>
-
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Valoración Inicial (1-5)</label>
-                <input name="rating" type="number" step="0.1" min="1" max="5" value={formData.rating} onChange={handleChange} className="admin-dashboard__input" />
-              </div>
-
-              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
-                <label className="admin-dashboard__label">Dirección Completa *</label>
-                <input required name="direccion" value={formData.direccion} onChange={handleChange} className="admin-dashboard__input" placeholder="Calle de Atocha, 125, 28012 Madrid" />
-              </div>
-
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Latitud *</label>
-                <input required name="lat" type="number" step="any" value={formData.lat} onChange={handleChange} className="admin-dashboard__input" placeholder="40.410972" />
-              </div>
-
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Longitud *</label>
-                <input required name="lng" type="number" step="any" value={formData.lng} onChange={handleChange} className="admin-dashboard__input" placeholder="-3.693056" />
-              </div>
-
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Página Web (Opcional)</label>
-                <input name="web" value={formData.web} onChange={handleChange} type="url" className="admin-dashboard__input" placeholder="https://..." />
-              </div>
-
-              <div className="admin-dashboard__form-group">
-                <label className="admin-dashboard__label">Teléfono (Opcional)</label>
-                <input name="telefono" value={formData.telefono} type="tel" onChange={handleChange} className="admin-dashboard__input" placeholder="+34 600..." />
-              </div>
-
-              {/* UPLOAD IMAGES SECTION */}
-              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
-                <label className="admin-dashboard__label">Fotos de la Galería (Múltiples)</label>
-
-                <div className="admin-dashboard__file-input-wrapper">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="admin-dashboard__file-input"
-                  />
-                  <div className="admin-dashboard__file-label">
-                    <span className="admin-dashboard__file-label-icon">📸</span>
-                    <span className="admin-dashboard__file-label-title">Haz clic o arrastra fotos aquí</span>
-                    <span className="admin-dashboard__file-label-subtitle">Sube JPG, PNG, WEBP limitados a 5MB cada una</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {localesList.map(local => (
+                  <div key={local.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#fff', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: '#0f172a' }}>{local.nombre}</h3>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>{local.direccion}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => handleEdit(local)}
+                        style={{ padding: '0.5rem 1rem', background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(local.id, local.nombre)}
+                        style={{ padding: '0.5rem 1rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
+                      >
+                        Borrar
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-                {fotosPreview.length > 0 && (
-                  <div className="admin-dashboard__file-preview-grid">
-                    {fotosPreview.map((url, i) => (
-                      <div key={i} className="admin-dashboard__file-preview-item">
-                        <img src={url} alt={`Preview ${i}`} />
+          {activeTab === "crear" && (
+            <>
+              <h2 className="admin-dashboard__section-title">
+                {editingId ? "Editar Local" : "Añadir Nuevo Local"}
+              </h2>
+
+              <form onSubmit={handleSubmit} className="admin-dashboard__form">
+                <div className="admin-dashboard__form-row">
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                    <label className="admin-dashboard__label">Nombre del Local *</label>
+                    <input required name="nombre" value={formData.nombre} onChange={handleChange} className="admin-dashboard__input" placeholder="Ej: Teatro Kapital" />
+                  </div>
+
+                  <div className="admin-dashboard__form-group">
+                    <label className="admin-dashboard__label">Tipo *</label>
+                    <select name="tipo" value={formData.tipo} onChange={handleChange} className="admin-dashboard__select">
+                      <option value="discoteca">Discoteca</option>
+                      <option value="club">Club Privado</option>
+                      <option value="bar">Bar de Copas</option>
+                      <option value="pub">Pub / Coctelería</option>
+                      <option value="restaurante">Restaurante Espectáculo</option>
+                    </select>
+                  </div>
+
+                  <div className="admin-dashboard__form-group">
+                    <label className="admin-dashboard__label">Valoración Inicial (1-5)</label>
+                    <input name="rating" type="number" step="0.1" min="1" max="5" value={formData.rating} onChange={handleChange} className="admin-dashboard__input" />
+                  </div>
+
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                    <label className="admin-dashboard__label">Dirección Completa *</label>
+                    <input required name="direccion" value={formData.direccion} onChange={handleChange} className="admin-dashboard__input" placeholder="Calle de Atocha, 125, 28012 Madrid" />
+                  </div>
+
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full" style={{ marginBottom: '0.5rem' }}>
+                    <label className="admin-dashboard__label">Ubicación Exacta * (Haz clic o arrastra el marcador rojo)</label>
+                    <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                      <MapSelector
+                        initialLat={formData.lat ? parseFloat(formData.lat) : undefined}
+                        initialLng={formData.lng ? parseFloat(formData.lng) : undefined}
+                        onLocationSelect={(lat, lng) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            lat: lat.toFixed(6),
+                            lng: lng.toFixed(6)
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                      <div style={{ flex: 1, padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block' }}>Latitud</span>
+                        <span style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>{formData.lat || 'Sin seleccionar'}</span>
+                      </div>
+                      <div style={{ flex: 1, padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block' }}>Longitud</span>
+                        <span style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>{formData.lng || 'Sin seleccionar'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="admin-dashboard__form-group">
+                    <label className="admin-dashboard__label">Página Web (Opcional)</label>
+                    <input name="web" value={formData.web} onChange={handleChange} type="url" className="admin-dashboard__input" placeholder="https://..." />
+                  </div>
+
+                  <div className="admin-dashboard__form-group">
+                    <label className="admin-dashboard__label">Teléfono (Opcional)</label>
+                    <input name="telefono" value={formData.telefono} type="tel" onChange={handleChange} className="admin-dashboard__input" placeholder="+34 600..." />
+                  </div>
+
+                  {/* UPLOAD IMAGES SECTION */}
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                    <label className="admin-dashboard__label">Fotos de la Galería (Múltiples)</label>
+
+                    <div className="admin-dashboard__file-input-wrapper">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="admin-dashboard__file-input"
+                      />
+                      <div className="admin-dashboard__file-label">
+                        <span className="admin-dashboard__file-label-icon">📸</span>
+                        <span className="admin-dashboard__file-label-title">Haz clic o arrastra nuevas fotos aquí</span>
+                        <span className="admin-dashboard__file-label-subtitle">Sube JPG, PNG, WEBP limitados a 5MB cada una</span>
+                      </div>
+                    </div>
+
+                    {existingFotos.length > 0 && (
+                      <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b' }}>Fotos Actuales (Guardadas en el servidor)</p>
+                        <div className="admin-dashboard__file-preview-grid">
+                          {existingFotos.map((url, i) => (
+                            <div key={`exist-${i}`} className="admin-dashboard__file-preview-item">
+                              <img src={url} alt={`Existente ${i}`} />
+                              <button
+                                type="button"
+                                onClick={() => removeExistingPhoto(i)}
+                                className="admin-dashboard__file-preview-item-remove"
+                                title="Eliminar foto guardada"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {fotosPreview.length > 0 && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b' }}>Fotos Nuevas a subir</p>
+                        <div className="admin-dashboard__file-preview-grid">
+                          {fotosPreview.map((url, i) => (
+                            <div key={`new-${i}`} className="admin-dashboard__file-preview-item">
+                              <img src={url} alt={`Preview ${i}`} />
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(i)}
+                                className="admin-dashboard__file-preview-item-remove"
+                                title="Quitar foto"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* UPLOAD MP3 AUDIO SECTION */}
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                    <label className="admin-dashboard__label">Canción del Local (MP3 opcional para "¿Qué se escucha aquí?")</label>
+
+                    <div className="admin-dashboard__file-input-wrapper" style={{ minHeight: '80px', padding: '1.5rem' }}>
+                      <input
+                        type="file"
+                        accept="audio/mpeg, audio/mp3"
+                        onChange={handleAudioChange}
+                        className="admin-dashboard__file-input"
+                      />
+                      <div className="admin-dashboard__file-label">
+                        <span className="admin-dashboard__file-label-icon">🎵</span>
+                        <span className="admin-dashboard__file-label-title">
+                          {audioFile ? `Cargado nuevo: ${audioFile.name}` : existingAudio ? 'Sube otro para reemplazar actual' : 'Haz clic para subir un archivo MP3'}
+                        </span>
+                      </div>
+                    </div>
+                    {existingAudio && !audioFile && (
+                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#0f172a' }}>Audio actual guardado ✅</p>
                         <button
                           type="button"
-                          onClick={() => removePhoto(i)}
-                          className="admin-dashboard__file-preview-item-remove"
-                          title="Quitar foto"
+                          onClick={() => setExistingAudio("")}
+                          style={{ fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
                         >
-                          ✕
+                          Eliminar audio actual
                         </button>
                       </div>
-                    ))}
+                    )}
+                    {audioFile && (
+                      <button
+                        type="button"
+                        onClick={() => setAudioFile(null)}
+                        style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Quitar fichero seleccionado
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* UPLOAD MP3 AUDIO SECTION */}
-              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
-                <label className="admin-dashboard__label">Canción del Local (MP3 opcional para "¿Qué se escucha aquí?")</label>
-
-                <div className="admin-dashboard__file-input-wrapper" style={{ minHeight: '80px', padding: '1.5rem' }}>
-                  <input
-                    type="file"
-                    accept="audio/mpeg, audio/mp3"
-                    onChange={handleAudioChange}
-                    className="admin-dashboard__file-input"
-                  />
-                  <div className="admin-dashboard__file-label">
-                    <span className="admin-dashboard__file-label-icon">🎵</span>
-                    <span className="admin-dashboard__file-label-title">
-                      {audioFile ? `Cargado: ${audioFile.name}` : 'Haz clic para subir un archivo MP3'}
-                    </span>
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
+                    <label className="admin-dashboard__label">Descripción *</label>
+                    <textarea
+                      required
+                      name="descripcion"
+                      value={formData.descripcion}
+                      onChange={handleChange}
+                      className="admin-dashboard__textarea"
+                      placeholder="Describe el ambiente, la música, si hay dress code..."
+                    />
                   </div>
+
                 </div>
-                {audioFile && (
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="admin-dashboard__submit"
+                >
+                  {loading ? "Guardando datos..." : (editingId ? "Guardar Cambios del Local" : "Crear Local en la Base de Datos")}
+                </button>
+                {editingId && (
                   <button
                     type="button"
-                    onClick={() => setAudioFile(null)}
-                    style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => {
+                      setEditingId(null);
+                      setFormData({ nombre: "", tipo: "bar", lat: "", lng: "", direccion: "", descripcion: "", rating: "4.5", numResenas: "0", web: "", telefono: "" });
+                      setExistingFotos([]);
+                      setExistingAudio("");
+                      setActiveTab("gestionar");
+                      setMessage(null);
+                    }}
+                    style={{ width: '100%', marginTop: '1rem', padding: '1rem', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 600 }}
                   >
-                    Eliminar canción
+                    Cancelar Edición
                   </button>
                 )}
-              </div>
-
-              <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
-                <label className="admin-dashboard__label">Descripción *</label>
-                <textarea
-                  required
-                  name="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleChange}
-                  className="admin-dashboard__textarea"
-                  placeholder="Describe el ambiente, la música, si hay dress code..."
-                />
-              </div>
-
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="admin-dashboard__submit"
-            >
-              {loading ? "Subiendo fotos y guardando..." : "Crear Local en la Base de Datos"}
-            </button>
-          </form>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </main>
