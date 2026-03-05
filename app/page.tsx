@@ -14,7 +14,7 @@ export default function HomePage() {
       </section>
 
       <section className="features-grid">
-        <Link href="/mapa" className="feature-card">
+        <Link href="/buscar" className="feature-card">
           <h2 className="feature-card__title">Explorar mapa</h2>
           <p className="feature-card__desc">
             Ver locales y eventos cerca de tu ubicación.
