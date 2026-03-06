@@ -144,6 +144,7 @@ export default function MapNearMe({ onSelectLocal, externalSelectedId }: MapProp
           layers: ["clusters", "unclustered-point"]
         });
         const newMarkers: Record<string, mapboxgl.Marker> = {};
+        const processedIds = new Set<string>();
 
         // Identificar qué marcadores necesitamos renderizar
         features.forEach((feature) => {
@@ -153,8 +154,12 @@ export default function MapNearMe({ onSelectLocal, externalSelectedId }: MapProp
           if (!props) return;
 
           const isCluster = props.cluster;
-          // Un ID único para saber si reciclamos el marker (las coordenadas en string suelen servir para clusters)
+          // Un ID único para saber si reciclamos el marker
           const markerId = isCluster ? `cluster-${props.cluster_id}` : `local-${props.id}`;
+
+          // Evitar procesar el mismo marcador dos veces si la query devuelve duplicados (ej: en bordes de tiles)
+          if (processedIds.has(markerId)) return;
+          processedIds.add(markerId);
 
           let marker = markersOnScreenRef.current[markerId];
 
@@ -221,6 +226,10 @@ export default function MapNearMe({ onSelectLocal, externalSelectedId }: MapProp
               element: container,
               anchor: "center"
             }).setLngLat(coords);
+          } else {
+            // MUY IMPORTANTE: Actualizar coordenadas si el marcador ya existía 
+            // (los clusters cambian de centro, y el mapa re-calcula posiciones en zoom intermedio)
+            marker.setLngLat(coords);
           }
 
           newMarkers[markerId] = marker;
