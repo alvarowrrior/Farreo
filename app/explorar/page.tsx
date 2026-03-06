@@ -89,7 +89,9 @@ export default function BuscarPage() {
             Locales en Madrid ordenados por cercanía.
           </p>
           <div className="explore-header__location">
-            <div className="explore-header__location-dot" />
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="explore-header__location-dot">
+              <circle cx="4" cy="4" r="4" fill="currentColor" />
+            </svg>
             Tu posición: {me ? `${me.lat.toFixed(4)}, ${me.lng.toFixed(4)}` : "Detectando..."}
           </div>
         </div>
@@ -125,7 +127,9 @@ export default function BuscarPage() {
       <section className="explore-list">
         {loading && (
           <div className="explore-list__loading">
-            <div className="explore-list__loading-spinner" />
+            <svg className="explore-list__loading-spinner" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
             <p className="explore-list__loading-text">Sincronizando con Firebase</p>
           </div>
         )}
@@ -140,9 +144,6 @@ export default function BuscarPage() {
           <article key={l.id} className="local-card">
             <div className="local-card__inner">
               <div className="local-card__info">
-                <div className="local-card__icon">
-                  ✨
-                </div>
                 <div className="local-card__details">
                   <h3 className="local-card__name">
                     {l.nombre}

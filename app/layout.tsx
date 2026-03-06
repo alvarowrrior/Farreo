@@ -19,11 +19,6 @@ export default function RootLayout({
       </head>
       <body className={`app-body ${inter.className}`}>
 
-        <div className="app-background">
-          <div className="app-background__lights" />
-          <div className="app-background__noise" />
-        </div>
-
         <Header />
 
         <main className="app-main">{children}</main>

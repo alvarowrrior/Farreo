@@ -101,7 +101,7 @@ export default function Header() {
                     <p className="header__dropdown-email">{user.email ?? ""}</p>
                   </div>
 
-                  <div className="header__dropdown-divider" />
+                  <hr className="header__dropdown-divider" />
 
                   <Link
                     href="/perfil"

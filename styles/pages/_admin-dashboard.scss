@@ -187,15 +187,24 @@
         gap: 0.5rem;
         pointer-events: none; // Let events pass to the hidden input
 
-        &-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
         &-title {
             color: vars.$text-white;
             font-weight: 600;
             font-size: vars.$font-size-base;
+
+            &::before {
+                display: block;
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            &--photo::before {
+                content: "📸";
+            }
+
+            &--audio::before {
+                content: "🎵";
+            }
         }
 
         &-subtitle {
@@ -285,14 +294,17 @@
         text-align: center;
         gap: 1.5rem;
 
-        &-icon {
-            font-size: 4rem;
-        }
-
         &-title {
             font-size: vars.$font-size-2xl;
             font-weight: 800;
             color: vars.$text-white;
+
+            &::before {
+                content: "🔒";
+                display: block;
+                font-size: 4rem;
+                margin-bottom: 1.5rem;
+            }
         }
 
         &-desc {

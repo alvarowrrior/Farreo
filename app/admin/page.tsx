@@ -246,7 +246,6 @@ export default function AdminDashboardPage() {
     return (
       <main className="admin-dashboard">
         <div className="admin-dashboard__unauthorized">
-          <div className="admin-dashboard__unauthorized-icon">🔒</div>
           <h1 className="admin-dashboard__unauthorized-title">Acceso Denegado</h1>
           <p className="admin-dashboard__unauthorized-desc">
             No tienes permisos de Administrador para ver esta página.
@@ -312,7 +311,9 @@ export default function AdminDashboardPage() {
           <div style={{ marginTop: '2rem' }}>
             <p className="admin-dashboard__label" style={{ marginBottom: '1rem' }}>Estado del Sistema</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.875rem' }}>
-              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80' }}></span>
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="4" cy="4" r="4" fill="#4ade80" />
+              </svg>
               Base de datos online
             </div>
           </div>
@@ -443,8 +444,7 @@ export default function AdminDashboardPage() {
                         className="admin-dashboard__file-input"
                       />
                       <div className="admin-dashboard__file-label">
-                        <span className="admin-dashboard__file-label-icon">📸</span>
-                        <span className="admin-dashboard__file-label-title">Haz clic o arrastra nuevas fotos aquí</span>
+                        <span className="admin-dashboard__file-label-title admin-dashboard__file-label-title--photo">Haz clic o arrastra nuevas fotos aquí</span>
                         <span className="admin-dashboard__file-label-subtitle">Sube JPG, PNG, WEBP limitados a 5MB cada una</span>
                       </div>
                     </div>
@@ -504,8 +504,7 @@ export default function AdminDashboardPage() {
                         className="admin-dashboard__file-input"
                       />
                       <div className="admin-dashboard__file-label">
-                        <span className="admin-dashboard__file-label-icon">🎵</span>
-                        <span className="admin-dashboard__file-label-title">
+                        <span className="admin-dashboard__file-label-title admin-dashboard__file-label-title--audio">
                           {audioFile ? `Cargado nuevo: ${audioFile.name}` : existingAudio ? 'Sube otro para reemplazar actual' : 'Haz clic para subir un archivo MP3'}
                         </span>
                       </div>

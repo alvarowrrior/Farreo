@@ -65,7 +65,7 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: any) {
         style={{ transform: `translateY(${getTranslation()})` }}
       >
         <div className="bottom-sheet__header" onClick={() => onSnapChange(snap === "mid" ? "full" : "mid")}>
-          <div className="bottom-sheet__drag-handle" />
+          <hr className="bottom-sheet__drag-handle" aria-hidden="true" />
           <div className="bottom-sheet__title-row">
             <h1 className="bottom-sheet__title">{title}</h1>
             <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="bottom-sheet__close-btn">✕</button>
@@ -116,8 +116,8 @@ function PanelContent({ local }: { local: Local }) {
 
       {local.audioUrl && (
         <div className="local-detail__audio-section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>🎵</span> ¿Qué se escucha aquí?
+          <p className="local-detail__audio-title" style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            ¿Qué se escucha aquí?
           </p>
           <audio controls controlsList="nodownload noplaybackrate" style={{ width: '100%', height: '40px' }} src={local.audioUrl}>
             Tu navegador no soporta el elemento de audio.
@@ -126,10 +126,9 @@ function PanelContent({ local }: { local: Local }) {
       )}
 
       {local.direccion && (
-        <div className="local-detail__address">
-          <span className="local-detail__address-icon">📍</span>
-          <span className="local-detail__address-text">{local.direccion}</span>
-        </div>
+        <address className="local-detail__address">
+          {local.direccion}
+        </address>
       )}
 
       <div className="local-detail__actions">
