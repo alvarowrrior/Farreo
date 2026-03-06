@@ -164,7 +164,7 @@ export default function BuscarPage() {
 
               <div className="local-card__actions">
                 <Link
-                  href={`/buscar?lat=${l.lat}&lng=${l.lng}`}
+                  href={`/buscar?id=${l.id}`}
                   className="local-card__btn-map"
                 >
                   Ver Mapa

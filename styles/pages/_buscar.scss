@@ -45,11 +45,8 @@
         flex-direction: column;
 
         @include mx.render-from(vars.$bp-sm) {
-            width: 90%;
-        }
-
-        @include mx.render-from(vars.$bp-md) {
-            width: 1200px;
+            width: calc(100% - 2rem);
+            max-width: 1200px;
         }
     }
 

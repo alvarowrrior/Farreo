@@ -21,6 +21,7 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    justify-content: center;
 
     &:hover .marker-dot {
         transform: scale(1.2);
@@ -39,6 +40,10 @@
 }
 
 .marker-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
     margin-top: 6px;
     background-color: vars.$bg-dark-elevated;
     color: vars.$text-white;

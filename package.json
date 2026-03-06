@@ -13,6 +13,7 @@
     "@capacitor/geolocation": "^8.0.0",
     "browser-image-compression": "^2.0.2",
     "firebase": "^12.8.0",
+    "framer-motion": "^12.35.0",
     "mapbox-gl": "^3.18.1",
     "next": "16.1.6",
     "react": "19.2.3",
