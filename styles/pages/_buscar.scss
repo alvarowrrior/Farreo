@@ -1,6 +1,15 @@
 @use "../utils/mixins" as mx;
 @use "../variables" as vars;
 
+// Clases aplicadas globalmente mediante JS
+body.buscar-active {
+    overflow: hidden !important;
+
+    footer {
+        display: none !important;
+    }
+}
+
 /* ==========================================================================
    Contenedor Principal del Mapa Full Screen (Página /buscar)
    ========================================================================== */
@@ -17,6 +26,11 @@
         inset: 0;
         width: 100vw;
         height: 100vh;
+    }
+
+    &__loading {
+        padding: 2rem;
+        text-align: center;
     }
 }
 
@@ -43,6 +57,7 @@
         transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
         display: flex;
         flex-direction: column;
+        touch-action: none;
 
         @include mx.render-from(vars.$bp-sm) {
             width: calc(100% - 2rem);
@@ -161,6 +176,10 @@
         }
     }
 
+    &__photo-img {
+        object-fit: cover;
+    }
+
     &__photo-counter {
         position: absolute;
         bottom: 1rem;
@@ -191,6 +210,58 @@
             font-weight: 700;
             text-transform: uppercase;
             font-size: 10px;
+        }
+    }
+
+    &__empty-state {
+        margin: 0 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+
+        span {
+            color: vars.$text-gray-400; // zinc-500
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+    }
+
+    &__toast {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+        background-color: #1e293b;
+        color: vars.$text-white;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &--visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        &-icon {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
     }
 
@@ -263,8 +334,30 @@
         }
     }
 
-    &__audio-title::before {
-        content: "🎵";
+    &__audio-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background-color: #f8fafc;
+        border-radius: 12px;
+    }
+
+    &__audio-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &::before {
+            content: "🎵";
+        }
+    }
+
+    &__audio-player {
+        width: 100%;
+        height: 40px;
     }
 
     &__actions {
@@ -315,5 +408,178 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   Map Search Bar Overlay
+   ========================================================================== */
+.map-search-container {
+    position: absolute;
+    top: 5.5rem; // Clear the header height
+    left: 1rem;
+    right: 1rem;
+    z-index: 50;
+
+    @include mx.render-from(vars.$bp-sm) {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
+.map-search-bar {
+    display: flex;
+    align-items: center;
+    background-color: rgba(24, 24, 27, 0.85); // zinc-900/85
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    padding: 0.75rem 1.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+
+    &--open {
+        border-radius: 1.5rem 1.5rem 0 0;
+        border-bottom-color: transparent;
+    }
+
+    &__icon {
+        color: vars.$text-gray-400;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    &__input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: vars.$text-white;
+        font-size: 1rem;
+        outline: none;
+
+        &::placeholder {
+            color: vars.$text-gray-400;
+        }
+    }
+
+    &__clear {
+        background: transparent;
+        border: none;
+        color: vars.$text-gray-400;
+        cursor: pointer;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            color: vars.$text-white;
+        }
+    }
+}
+
+.map-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: rgba(24, 24, 27, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
+    border-radius: 0 0 1.5rem 1.5rem;
+    max-height: 50vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+    /* scrollbar */
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    &__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    &__item {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    &__btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        transition: background-color 0.2s;
+
+        &:hover,
+        &:focus {
+            background-color: rgba(255, 255, 255, 0.05);
+            outline: none;
+        }
+    }
+
+    &__info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    &__name {
+        color: vars.$text-white;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    &__type {
+        color: vars.$text-gray-400;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    &__dist {
+        color: #f59e0b; // amber-500
+        font-size: 0.85rem;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+
+    &__empty {
+        padding: 1.5rem;
+        text-align: center;
+        color: vars.$text-gray-400;
+        font-size: 0.9rem;
     }
 }

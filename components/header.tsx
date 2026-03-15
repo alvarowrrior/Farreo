@@ -68,9 +68,6 @@ export default function Header() {
         </Link>
 
         <nav className="header__nav">
-          <Link href="/explorar" className="header__link">
-            Explorar
-          </Link>
           <Link href="/buscar" className="header__link">
             Buscar
           </Link>

@@ -56,7 +56,7 @@ export default function MapSelector({ initialLat, initialLng, onLocationSelect }
                 const el = document.createElement("div");
                 el.className = "marker-container";
                 el.innerHTML = `
-          <div class="marker-dot" style="background-color: #f97316; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
+          <div class="marker-dot marker-dot--selector"></div>
         `;
 
                 markerRef.current = new mapboxgl.Marker({ element: el, draggable: true })
@@ -114,9 +114,9 @@ export default function MapSelector({ initialLat, initialLng, onLocationSelect }
 
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "350px", borderRadius: "12px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-            <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
-            <div style={{ position: "absolute", top: "10px", left: "10px", background: "rgba(255,255,255,0.9)", padding: "0.5rem 1rem", borderRadius: "8px", fontSize: "0.85rem", fontWeight: "600", color: "#1e293b", pointerEvents: "none", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+        <div className="map-selector">
+            <div ref={mapContainerRef} className="map-selector__container" />
+            <div className="map-selector__overlay">
                 📍 Haz clic o arrastra el marcador
             </div>
         </div>

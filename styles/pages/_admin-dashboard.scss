@@ -9,6 +9,11 @@
     display: flex;
     flex-direction: column;
 
+    &--loading {
+        justify-content: center;
+        align-items: center;
+    }
+
     &__header {
         margin-bottom: 3rem;
     }
@@ -49,6 +54,99 @@
         padding: 2rem;
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+
+        // Sidebar content blocks
+        .admin-dashboard__user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .admin-dashboard__avatar {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            color: vars.$text-white;
+            font-weight: 900;
+            font-size: vars.$font-size-base;
+        }
+
+        .admin-dashboard__user-name {
+            font-size: 1rem;
+            color: vars.$text-white;
+            font-weight: 700;
+        }
+
+        .admin-dashboard__user-email {
+            font-size: 0.8rem;
+            color: vars.$text-gray-400;
+        }
+
+        .admin-dashboard__nav {
+            margin-top: 2rem;
+        }
+
+        .admin-dashboard__nav-title {
+            font-size: vars.$font-size-sm;
+            color: vars.$text-gray-400;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .admin-dashboard__nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .admin-dashboard__nav-btn {
+            padding: 0.8rem;
+            text-align: left;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background-color: transparent;
+            color: vars.$text-gray-200;
+            font-weight: 400;
+
+            &--active {
+                background-color: #f1f5f9;
+                color: #0f172a;
+                font-weight: 600;
+            }
+        }
+
+        .admin-dashboard__status {
+            margin-top: 2rem;
+        }
+
+        .admin-dashboard__status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4ade80;
+            font-size: 0.875rem;
+        }
+
+        .admin-dashboard__status-icon {
+            width: 8px;
+            height: 8px;
+            fill: none;
+
+            circle {
+                fill: #4ade80;
+            }
+        }
     }
 
     &__form-container {
@@ -61,6 +159,78 @@
 
         @include mx.render-from(vars.$bp-md) {
             padding: 3rem;
+        }
+    }
+
+    &__message {
+        font-size: vars.$font-size-sm;
+        font-weight: 600;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+
+        &--success {
+            background-color: rgba(74, 222, 128, 0.1);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        &--error {
+            background-color: rgba(248, 113, 113, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    &__list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
+        &-title {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+
+        &-desc {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        &-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    }
+
+    &__action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+
+        &--edit {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        &--delete {
+            background-color: #fee2e2;
+            color: #ef4444;
         }
     }
 
@@ -97,6 +267,36 @@
 
         &--full {
             grid-column: 1 / -1;
+        }
+    }
+
+    &__map-container {
+        margin: 0.5rem 0;
+    }
+
+    &__coords {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    &__coord-box {
+        flex: 1;
+        padding: 0.75rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+
+        &-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: block;
+        }
+
+        &-value {
+            font-size: 0.9rem;
+            color: #0f172a;
+            font-weight: 600;
         }
     }
 
@@ -167,6 +367,50 @@
         &--dragover {
             border-color: rgba(245, 158, 11, 0.5);
             background-color: rgba(245, 158, 11, 0.05);
+        }
+
+        &--small {
+            min-height: 80px;
+            padding: 1.5rem;
+        }
+    }
+
+    &__file-section {
+        margin-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1rem;
+
+        &--new {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        &-title {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+    }
+
+    &__audio-status {
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+
+        &-text {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #0f172a;
+        }
+
+        &-btn {
+            font-size: 0.8rem;
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
         }
     }
 
@@ -281,6 +525,23 @@
             opacity: 0.6;
             cursor: not-allowed;
             background-color: vars.$text-gray-400;
+        }
+    }
+
+    &__btn-cancel {
+        width: 100%;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        background-color: transparent;
+        color: #64748b;
+        cursor: pointer;
+        font-weight: 600;
+
+        &:hover {
+            color: #0f172a;
+            border-color: #64748b;
         }
     }
 

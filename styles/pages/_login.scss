@@ -27,6 +27,11 @@
         margin-top: 1.5rem;
         font-size: 1.875rem; // 3xl
         font-weight: 800;
+
+        &--small {
+            margin-top: 0.25rem;
+            font-size: 1rem;
+        }
     }
 
     &__subtitle {

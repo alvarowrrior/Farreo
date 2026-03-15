@@ -53,7 +53,7 @@ export default function LoginPage() {
           {user ? (
             <>
               <p className="login-card__subtitle">Sesión iniciada como:</p>
-              <p className="login-card__title" style={{ marginTop: '0.25rem', fontSize: '1rem' }}>{user.displayName ?? "Usuario"}</p>
+              <p className="login-card__title login-card__title--small">{user.displayName ?? "Usuario"}</p>
               <p className="login-card__subtitle">{user.email ?? ""}</p>
 
               <button

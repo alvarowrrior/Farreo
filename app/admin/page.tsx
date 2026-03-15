@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
   // ESTADOS DE CARGA Y AUTORIZACIÓN
   if (isCheckingAuth) {
     return (
-      <main className="admin-dashboard" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <main className="admin-dashboard admin-dashboard--loading">
         <p className="admin-dashboard__subtitle">Verificando credenciales...</p>
       </main>
     );
@@ -269,23 +269,23 @@ export default function AdminDashboardPage() {
         {/* SIDEBAR: Información / Acciones rápidas (opcional para futuro) */}
         <aside className="admin-dashboard__sidebar">
           <h2 className="admin-dashboard__section-title">Sesión Admin</h2>
-          <div className="profile-page__user-info">
+          <div className="admin-dashboard__user-info">
             {user?.photoURL ? (
-              <img src={user.photoURL} alt="Admin" className="profile-page__avatar" style={{ width: '3rem', height: '3rem' }} />
+              <img src={user.photoURL} alt="Admin" className="admin-dashboard__avatar" />
             ) : (
-              <div className="profile-page__avatar" style={{ width: '3rem', height: '3rem' }}>
+              <div className="admin-dashboard__avatar">
                 {(user?.email?.[0] ?? "A").toUpperCase()}
               </div>
             )}
             <div>
-              <p className="profile-page__name" style={{ fontSize: '1rem' }}>{user?.displayName || "Administrador"}</p>
-              <p className="profile-page__email" style={{ fontSize: '0.8rem' }}>{user?.email}</p>
+              <p className="admin-dashboard__user-name">{user?.displayName || "Administrador"}</p>
+              <p className="admin-dashboard__user-email">{user?.email}</p>
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
-            <p className="admin-dashboard__label" style={{ marginBottom: '1rem' }}>Menú de Navegación</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="admin-dashboard__nav">
+            <p className="admin-dashboard__nav-title">Menú de Navegación</p>
+            <div className="admin-dashboard__nav-list">
               <button
                 onClick={() => {
                   setActiveTab("crear");
@@ -295,24 +295,24 @@ export default function AdminDashboardPage() {
                   setExistingAudio("");
                   setMessage(null);
                 }}
-                style={{ padding: '0.8rem', textAlign: 'left', background: activeTab === 'crear' ? '#f1f5f9' : 'transparent', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'crear' ? 600 : 400 }}
+                className={`admin-dashboard__nav-btn ${activeTab === 'crear' ? 'admin-dashboard__nav-btn--active' : ''}`}
               >
                 {editingId ? "✏️ Editando Local..." : "➕ Añadir Local"}
               </button>
               <button
                 onClick={() => { setActiveTab("gestionar"); setMessage(null); }}
-                style={{ padding: '0.8rem', textAlign: 'left', background: activeTab === 'gestionar' ? '#f1f5f9' : 'transparent', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: activeTab === 'gestionar' ? 600 : 400 }}
+                className={`admin-dashboard__nav-btn ${activeTab === 'gestionar' ? 'admin-dashboard__nav-btn--active' : ''}`}
               >
                 📋 Gestionar Locales
               </button>
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
-            <p className="admin-dashboard__label" style={{ marginBottom: '1rem' }}>Estado del Sistema</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '0.875rem' }}>
-              <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <circle cx="4" cy="4" r="4" fill="#4ade80" />
+          <div className="admin-dashboard__status">
+            <p className="admin-dashboard__nav-title">Estado del Sistema</p>
+            <div className="admin-dashboard__status-indicator">
+              <svg className="admin-dashboard__status-icon" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="4" cy="4" r="4" />
               </svg>
               Base de datos online
             </div>
@@ -322,7 +322,7 @@ export default function AdminDashboardPage() {
         <div className="admin-dashboard__form-container">
 
           {message && (
-            <div className={`profile-page__message profile-page__message--${message.type}`} style={{ marginBottom: '1.5rem' }}>
+            <div className={`admin-dashboard__message admin-dashboard__message--${message.type}`}>
               {message.text}
             </div>
           )}
@@ -333,23 +333,23 @@ export default function AdminDashboardPage() {
               {loading && <p>Cargando locales...</p>}
               {!loading && localesList.length === 0 && <p>No hay locales registrados aún.</p>}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="admin-dashboard__list">
                 {localesList.map(local => (
-                  <div key={local.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#fff', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                  <div key={local.id} className="admin-dashboard__list-item">
                     <div>
-                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: '#0f172a' }}>{local.nombre}</h3>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>{local.direccion}</p>
+                      <h3 className="admin-dashboard__list-item-title">{local.nombre}</h3>
+                      <p className="admin-dashboard__list-item-desc">{local.direccion}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="admin-dashboard__list-item-actions">
                       <button
                         onClick={() => handleEdit(local)}
-                        style={{ padding: '0.5rem 1rem', background: '#e0e7ff', color: '#4f46e5', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
+                        className="admin-dashboard__action-btn admin-dashboard__action-btn--edit"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => handleDelete(local.id, local.nombre)}
-                        style={{ padding: '0.5rem 1rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
+                        className="admin-dashboard__action-btn admin-dashboard__action-btn--delete"
                       >
                         Borrar
                       </button>
@@ -394,9 +394,9 @@ export default function AdminDashboardPage() {
                     <input required name="direccion" value={formData.direccion} onChange={handleChange} className="admin-dashboard__input" placeholder="Calle de Atocha, 125, 28012 Madrid" />
                   </div>
 
-                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full" style={{ marginBottom: '0.5rem' }}>
+                  <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
                     <label className="admin-dashboard__label">Ubicación Exacta * (Haz clic o arrastra el marcador rojo)</label>
-                    <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div className="admin-dashboard__map-container">
                       <MapSelector
                         initialLat={formData.lat ? parseFloat(formData.lat) : undefined}
                         initialLng={formData.lng ? parseFloat(formData.lng) : undefined}
@@ -409,14 +409,14 @@ export default function AdminDashboardPage() {
                         }}
                       />
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                      <div style={{ flex: 1, padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block' }}>Latitud</span>
-                        <span style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>{formData.lat || 'Sin seleccionar'}</span>
+                    <div className="admin-dashboard__coords">
+                      <div className="admin-dashboard__coord-box">
+                        <span className="admin-dashboard__coord-box-label">Latitud</span>
+                        <span className="admin-dashboard__coord-box-value">{formData.lat || 'Sin seleccionar'}</span>
                       </div>
-                      <div style={{ flex: 1, padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block' }}>Longitud</span>
-                        <span style={{ fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>{formData.lng || 'Sin seleccionar'}</span>
+                      <div className="admin-dashboard__coord-box">
+                        <span className="admin-dashboard__coord-box-label">Longitud</span>
+                        <span className="admin-dashboard__coord-box-value">{formData.lng || 'Sin seleccionar'}</span>
                       </div>
                     </div>
                   </div>
@@ -450,8 +450,8 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {existingFotos.length > 0 && (
-                      <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b' }}>Fotos Actuales (Guardadas en el servidor)</p>
+                      <div className="admin-dashboard__file-section">
+                        <p className="admin-dashboard__file-section-title">Fotos Actuales (Guardadas en el servidor)</p>
                         <div className="admin-dashboard__file-preview-grid">
                           {existingFotos.map((url, i) => (
                             <div key={`exist-${i}`} className="admin-dashboard__file-preview-item">
@@ -471,8 +471,8 @@ export default function AdminDashboardPage() {
                     )}
 
                     {fotosPreview.length > 0 && (
-                      <div style={{ marginTop: '1rem' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b' }}>Fotos Nuevas a subir</p>
+                      <div className="admin-dashboard__file-section admin-dashboard__file-section--new">
+                        <p className="admin-dashboard__file-section-title">Fotos Nuevas a subir</p>
                         <div className="admin-dashboard__file-preview-grid">
                           {fotosPreview.map((url, i) => (
                             <div key={`new-${i}`} className="admin-dashboard__file-preview-item">
@@ -496,7 +496,7 @@ export default function AdminDashboardPage() {
                   <div className="admin-dashboard__form-group admin-dashboard__form-group--full">
                     <label className="admin-dashboard__label">Canción del Local (MP3 opcional para "¿Qué se escucha aquí?")</label>
 
-                    <div className="admin-dashboard__file-input-wrapper" style={{ minHeight: '80px', padding: '1.5rem' }}>
+                    <div className="admin-dashboard__file-input-wrapper admin-dashboard__file-input-wrapper--small">
                       <input
                         type="file"
                         accept="audio/mpeg, audio/mp3"
@@ -510,12 +510,12 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                     {existingAudio && !audioFile && (
-                      <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#0f172a' }}>Audio actual guardado ✅</p>
+                      <div className="admin-dashboard__audio-status">
+                        <p className="admin-dashboard__audio-status-text">Audio actual guardado ✅</p>
                         <button
                           type="button"
                           onClick={() => setExistingAudio("")}
-                          style={{ fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                          className="admin-dashboard__audio-status-btn"
                         >
                           Eliminar audio actual
                         </button>
@@ -525,7 +525,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setAudioFile(null)}
-                        style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                        className="admin-dashboard__audio-status-btn"
                       >
                         Quitar fichero seleccionado
                       </button>
@@ -564,7 +564,7 @@ export default function AdminDashboardPage() {
                       setActiveTab("gestionar");
                       setMessage(null);
                     }}
-                    style={{ width: '100%', marginTop: '1rem', padding: '1rem', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 600 }}
+                    className="admin-dashboard__btn-cancel"
                   >
                     Cancelar Edición
                   </button>

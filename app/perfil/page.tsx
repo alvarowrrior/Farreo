@@ -78,7 +78,7 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <main className="profile-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <main className="profile-page profile-page--loading">
         <p className="profile-page__subtitle">Cargando…</p>
       </main>
     );

@@ -13,19 +13,12 @@ export default function HomePage() {
         </p>
       </section>
 
-      <section className="features-grid">
-        <Link href="/buscar" className="feature-card">
-          <h2 className="feature-card__title">Explorar mapa</h2>
-          <p className="feature-card__desc">
-            Ver locales y eventos cerca de tu ubicación.
-          </p>
-        </Link>
-
-        <Link href="/explorar" className="feature-card">
-          <h2 className="feature-card__title">Explorar por lista</h2>
-          <p className="feature-card__desc">
-            Buscar por ciudad, fecha o tipo de evento.
-          </p>
+      <section className="home-actions">
+        <Link href="/buscar" className="home-cta">
+          <span className="home-cta__text">Ir al mapa</span>
+          <svg className="home-cta__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </Link>
       </section>
     </main>

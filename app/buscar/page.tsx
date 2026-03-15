@@ -6,7 +6,9 @@ import { useSearchParams } from "next/navigation";
 import MapNearMe from "@/components/MapNearMe";
 import { getLocales } from "@/lib/locales";
 import type { Local } from "@/lib/locales";
+import { getCoords, type Coords } from "@/lib/location";
 import { motion, useAnimation, PanInfo } from "framer-motion";
+import MapSearchBar from "@/components/MapSearchBar";
 
 type SheetSnap = "closed" | "mid" | "full";
 
@@ -17,21 +19,24 @@ function BuscarPageContent() {
   const [selectedLocal, setSelectedLocal] = useState<Local | null>(null);
   const [snap, setSnap] = useState<SheetSnap>("closed");
   const [allLocales, setAllLocales] = useState<Local[]>([]);
+  const [userCoords, setUserCoords] = useState<Coords | null>(null);
 
-  // Bloquear scroll fuera del bottom sheet
+  // Bloquear scroll fuera del bottom sheet mediante clase global
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    const footer = document.querySelector("footer");
-    if (footer) footer.style.display = "none";
+    document.body.classList.add("buscar-active");
     return () => {
-      document.body.style.overflow = "auto";
-      if (footer) footer.style.display = "block";
+      document.body.classList.remove("buscar-active");
     };
   }, []);
 
-  // Cargar locales (necesario por si venimos de la URL con un ID)
+  // Cargar locales (necesario por si venimos de la URL con un ID o para el buscador)
   useEffect(() => {
     getLocales().then(setAllLocales);
+  }, []);
+
+  // Obtener geolocalización para el buscador
+  useEffect(() => {
+    getCoords().then(setUserCoords).catch(err => console.log("Ubicación denegada:", err));
   }, []);
 
   // Setear el local inicial si viene por URL
@@ -54,6 +59,12 @@ function BuscarPageContent() {
 
   return (
     <main className="buscar-page">
+      <MapSearchBar
+        locales={allLocales}
+        userCoords={userCoords}
+        onSelectLocal={(local) => setSelectedLocal(local)}
+      />
+
       <MapNearMe
         onSelectLocal={setSelectedLocal}
         externalSelectedId={selectedLocal?.id || (rawId ? rawId : undefined)}
@@ -68,7 +79,7 @@ function BuscarPageContent() {
         {selectedLocal ? (
           <PanelContent local={selectedLocal} />
         ) : (
-          <div className="local-detail__no-photos" style={{ background: 'transparent', border: 'none' }}>
+          <div className="local-detail__empty-state">
             <span>Toca un marcador...</span>
           </div>
         )}
@@ -79,7 +90,7 @@ function BuscarPageContent() {
 
 export default function BuscarPage() {
   return (
-    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Cargando mapa...</div>}>
+    <Suspense fallback={<div className="buscar-page__loading">Cargando mapa...</div>}>
       <BuscarPageContent />
     </Suspense>
   );
@@ -134,7 +145,7 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: {
   };
 
   return (
-    <div className="bottom-sheet" style={{ pointerEvents: "none" }}>
+    <div className="bottom-sheet">
       <motion.div
         className="bottom-sheet__panel"
         initial={{ y: "120vh" }}
@@ -143,7 +154,7 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: {
         dragConstraints={{ top: 0, bottom: typeof window !== 'undefined' ? window.innerHeight : 1000 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        style={{ touchAction: "none", pointerEvents: "auto" }} // Evitar scroll de la página al arrastrar
+      // Evitar scroll de la página al arrastrar
       >
         <div className="bottom-sheet__header" onClick={() => onSnapChange(snap === "mid" ? "full" : "mid")}>
           <hr className="bottom-sheet__drag-handle" aria-hidden="true" />
@@ -205,31 +216,10 @@ function PanelContent({ local }: { local: Local }) {
   };
 
   return (
-    <article className="local-detail" style={{ position: 'relative' }}>
+    <article className="local-detail">
       {/* TOAST NOTIFICATION */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '80px',
-          left: '50%',
-          transform: `translateX(-50%) translateY(${copied ? '0' : '20px'})`,
-          opacity: copied ? 1 : 0,
-          pointerEvents: 'none',
-          backgroundColor: '#1E293B',
-          color: 'white',
-          padding: '8px 16px',
-          borderRadius: '999px',
-          fontSize: '0.875rem',
-          fontWeight: 500,
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <div className={`local-detail__toast ${copied ? 'local-detail__toast--visible' : ''}`}>
+        <svg className="local-detail__toast-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
         Copiado
       </div>
 
@@ -239,7 +229,7 @@ function PanelContent({ local }: { local: Local }) {
           {local.fotos.length > 0 ? (
             local.fotos.map((url, i) => (
               <div key={i} className="local-detail__photo-card">
-                <Image src={url} alt={local.nombre} fill className="object-cover" />
+                <Image src={url} alt={local.nombre} fill className="local-detail__photo-img" />
                 <div className="local-detail__photo-counter">
                   {i + 1} / {local.fotos.length}
                 </div>
@@ -266,11 +256,11 @@ function PanelContent({ local }: { local: Local }) {
       <p className="local-detail__desc">"{local.descripcion}"</p>
 
       {local.audioUrl && (
-        <div className="local-detail__audio-section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '12px' }}>
-          <p className="local-detail__audio-title" style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="local-detail__audio-section">
+          <p className="local-detail__audio-title">
             ¿Qué se escucha aquí?
           </p>
-          <audio ref={audioRef} controls controlsList="nodownload noplaybackrate" style={{ width: '100%', height: '40px' }} src={local.audioUrl}>
+          <audio ref={audioRef} controls controlsList="nodownload noplaybackrate" className="local-detail__audio-player" src={local.audioUrl}>
             Tu navegador no soporta el elemento de audio.
           </audio>
         </div>
