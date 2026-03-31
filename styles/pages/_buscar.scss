@@ -150,6 +150,8 @@ body.buscar-active {
         scroll-snap-type: x mandatory;
         gap: 0.75rem; // gap-3
         padding: 0 2rem 1rem; // px-8 pb-4
+        list-style: none; // Semantica de lista
+        margin: 0;
 
         // Ocultar scrollbar
         &::-webkit-scrollbar {
@@ -282,6 +284,7 @@ body.buscar-active {
         font-size: 10px;
         font-weight: 900;
         text-transform: uppercase;
+        margin: 0; // Para el p
     }
 
     &__name {

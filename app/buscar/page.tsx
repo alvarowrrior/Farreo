@@ -156,13 +156,13 @@ function BottomSheet({ snap, onSnapChange, onClose, title, children }: {
         onDragEnd={handleDragEnd}
       // Evitar scroll de la página al arrastrar
       >
-        <div className="bottom-sheet__header" onClick={() => onSnapChange(snap === "mid" ? "full" : "mid")}>
-          <hr className="bottom-sheet__drag-handle" aria-hidden="true" />
+        <header className="bottom-sheet__header" onClick={() => onSnapChange(snap === "mid" ? "full" : "mid")}>
+          <div className="bottom-sheet__drag-handle" aria-hidden="true" />
           <div className="bottom-sheet__title-row">
-            <h1 className="bottom-sheet__title">{title}</h1>
+            <h2 className="bottom-sheet__title">{title}</h2>
             <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="bottom-sheet__close-btn">✕</button>
           </div>
-        </div>
+        </header>
         <div
           className={`bottom-sheet__content ${snap === "full" ? "bottom-sheet__content--scrollable" : "bottom-sheet__content--hidden"}`}
           // Prevenir que el drag del panel reaccione al hacer scroll en el contenido
@@ -225,45 +225,45 @@ function PanelContent({ local }: { local: Local }) {
 
       {/* CARRUSEL SNAP SCROLL */}
       <div className="local-detail__carousel">
-        <div className="local-detail__scroll-area">
+        <ul className="local-detail__scroll-area" role="list" aria-label={`Fotos de ${local.nombre}`}>
           {local.fotos.length > 0 ? (
             local.fotos.map((url, i) => (
-              <div key={i} className="local-detail__photo-card">
-                <Image src={url} alt={local.nombre} fill className="local-detail__photo-img" />
+              <li key={i} className="local-detail__photo-card">
+                <Image src={url} alt={`${local.nombre} - foto ${i + 1}`} fill className="local-detail__photo-img" />
                 <div className="local-detail__photo-counter">
                   {i + 1} / {local.fotos.length}
                 </div>
-              </div>
+              </li>
             ))
           ) : (
-            <div className="local-detail__no-photos">
+            <li className="local-detail__no-photos">
               <span>Sin fotos</span>
-            </div>
+            </li>
           )}
-        </div>
+        </ul>
       </div>
 
-      <div className="local-detail__header">
-        <div>
-          <span className="local-detail__tag">{local.tipo}</span>
+      <header className="local-detail__header">
+        <hgroup>
+          <p className="local-detail__tag">{local.tipo}</p>
           <h2 className="local-detail__name">{local.nombre}</h2>
+        </hgroup>
+        <div className="local-detail__rating" aria-label={`Valoración: ${local.rating} estrellas`}>
+          <span aria-hidden="true">★</span> {local.rating}
         </div>
-        <div className="local-detail__rating">
-          ★ {local.rating}
-        </div>
-      </div>
+      </header>
 
       <p className="local-detail__desc">"{local.descripcion}"</p>
 
       {local.audioUrl && (
-        <div className="local-detail__audio-section">
-          <p className="local-detail__audio-title">
+        <section className="local-detail__audio-section">
+          <h3 className="local-detail__audio-title">
             ¿Qué se escucha aquí?
-          </p>
+          </h3>
           <audio ref={audioRef} controls controlsList="nodownload noplaybackrate" className="local-detail__audio-player" src={local.audioUrl}>
             Tu navegador no soporta el elemento de audio.
           </audio>
-        </div>
+        </section>
       )}
 
       {local.direccion && (
@@ -272,7 +272,7 @@ function PanelContent({ local }: { local: Local }) {
         </address>
       )}
 
-      <div className="local-detail__actions">
+      <nav className="local-detail__actions" aria-label="Acciones del local">
         {local.web ? (
           <button
             onClick={() => window.open(local.web, '_blank')}
@@ -294,7 +294,7 @@ function PanelContent({ local }: { local: Local }) {
         >
           Cómo llegar
         </button>
-      </div>
+      </nav>
     </article>
   );
 }

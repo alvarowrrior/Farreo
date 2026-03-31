@@ -87,44 +87,56 @@ export default function Header() {
               </button>
 
               {menuOpen && (
-                <div
+                <ul
                   className="header__dropdown"
                   onMouseLeave={() => setMenuOpen(false)}
+                  role="menu"
                 >
-                  <div className="header__dropdown-header">
+                  <li className="header__dropdown-header" role="presentation">
                     <p className="header__dropdown-name">
                       {user.displayName ?? "Usuario"}
                     </p>
                     <p className="header__dropdown-email">{user.email ?? ""}</p>
-                  </div>
+                  </li>
 
-                  <hr className="header__dropdown-divider" />
+                  <li role="presentation">
+                    <hr className="header__dropdown-divider" />
+                  </li>
 
-                  <Link
-                    href="/perfil"
-                    className="header__dropdown-link"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Perfil
-                  </Link>
-
-                  {isAdmin && (
+                  <li role="presentation">
                     <Link
-                      href="/admin"
+                      href="/perfil"
                       className="header__dropdown-link"
                       onClick={() => setMenuOpen(false)}
+                      role="menuitem"
                     >
-                      Panel Admin
+                      Perfil
                     </Link>
+                  </li>
+
+                  {isAdmin && (
+                    <li role="presentation">
+                      <Link
+                        href="/admin"
+                        className="header__dropdown-link"
+                        onClick={() => setMenuOpen(false)}
+                        role="menuitem"
+                      >
+                        Panel Admin
+                      </Link>
+                    </li>
                   )}
 
-                  <button
-                    onClick={logout}
-                    className="header__dropdown-btn header__dropdown-btn--danger"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
+                  <li role="presentation">
+                    <button
+                      onClick={logout}
+                      className="header__dropdown-btn header__dropdown-btn--danger"
+                      role="menuitem"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </li>
+                </ul>
               )}
             </div>
           ) : (
