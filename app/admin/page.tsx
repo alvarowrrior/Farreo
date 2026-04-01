@@ -305,6 +305,13 @@ export default function AdminDashboardPage() {
               >
                 📋 Gestionar Locales
               </button>
+              <Link
+                href="/admin/playlist"
+                className="admin-dashboard__nav-btn"
+                style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                🎧 Modo Spotify
+              </Link>
             </div>
           </div>
 

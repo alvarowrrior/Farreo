@@ -1,0 +1,330 @@
+@use "../variables" as vars;
+@use "../utils/mixins" as mx;
+
+.playlist-admin {
+  background-color: #121212;
+  color: #ffffff;
+  min-height: calc(100vh - 80px); /* Adjusting for potential header */
+  padding: 2rem 1rem;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+
+  /* Subtle gradient background like Spotify */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 330px;
+    background: linear-gradient(180deg, rgba(83, 83, 83, 1) 0%, rgba(18, 18, 18, 1) 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.04em;
+  }
+
+  &__subtitle {
+    font-size: 1rem;
+    color: #b3b3b3;
+    margin-top: 0.5rem;
+    font-weight: 500;
+  }
+
+  &__nav-back {
+    color: #b3b3b3;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #1ed760;
+    }
+  }
+
+  &__upload-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+
+    &:hover, &--active {
+      border-color: #1ed760;
+      background: rgba(30, 215, 96, 0.05);
+    }
+  }
+
+  &__upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+  }
+
+  &__upload-icon {
+    font-size: 2.5rem;
+    color: #b3b3b3;
+  }
+
+  &__upload-text {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  &__upload-sub {
+    font-size: 0.8rem;
+    color: #b3b3b3;
+  }
+
+  &__upload-input {
+    display: none;
+  }
+
+  &__upload-btn {
+    background: #1ed760;
+    color: #000;
+    border: none;
+    border-radius: 500px;
+    padding: 0.75rem 2rem;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-top: 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+
+    &:hover {
+      background: #1fdf64;
+      transform: scale(1.04);
+    }
+
+    &:disabled {
+      background: #535353;
+      color: #b3b3b3;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+
+  &__list {
+    width: 100%;
+    margin-bottom: 6rem; /* Space for the fixed player */
+  }
+
+  &__list-header {
+    display: grid;
+    grid-template-columns: 50px 1fr 120px;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #b3b3b3;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: 50px 1fr 120px;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    align-items: center;
+    transition: background 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+
+      .playlist-admin__item-play-icon {
+        opacity: 1;
+      }
+
+      .playlist-admin__item-num {
+        opacity: 0;
+      }
+    }
+
+    &--active {
+      background: rgba(255, 255, 255, 0.15);
+      
+      .playlist-admin__item-title {
+        color: #1ed760 !important;
+      }
+    }
+  }
+
+  &__item-index {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: #b3b3b3;
+  }
+
+  &__item-num {
+    font-size: 1rem;
+    transition: opacity 0.2s ease;
+  }
+
+  &__item-play-icon {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    font-size: 1rem;
+    color: #fff;
+    transition: opacity 0.2s ease;
+  }
+
+  &__item-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__item-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__item-date {
+    font-size: 0.85rem;
+    color: #b3b3b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* FIXED PLAYER AT BOTTOM */
+  &__player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #181818;
+    border-top: 1px solid #282828;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+
+    @include mx.render-to(vars.$bp-sm) {
+      padding: 1rem;
+    }
+  }
+
+  &__player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 600px;
+    width: 100%;
+  }
+
+  &__player-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  &__control-btn {
+    background: transparent;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      color: #fff;
+    }
+
+    &--play {
+      background: #fff;
+      color: #000;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      padding-left: 3px;
+
+      &:hover {
+        transform: scale(1.05);
+        color: #000;
+      }
+    }
+  }
+
+  &__now-playing {
+    position: absolute;
+    left: 2rem;
+    display: flex;
+    flex-direction: column;
+
+    @include mx.render-to(vars.$bp-md) {
+      display: none;
+    }
+  }
+
+  &__now-playing-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+  }
+
+  &__now-playing-pitch {
+    font-size: 0.75rem;
+    color: #1ed760;
+    background: rgba(30, 215, 96, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+    margin-top: 4px;
+  }
+}
