@@ -6,10 +6,7 @@ import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
 // LISTA DE ADMINISTRADORES AUTORIZADOS
-const ADMIN_EMAILS = [
-  "guerrerogonzalez.alvaro@gmail.com",
-  // Añade más correos aquí si lo necesitas
-];
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
 function Avatar({ user }: { user: User }) {
   const photo = user.photoURL;

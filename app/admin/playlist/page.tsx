@@ -8,9 +8,7 @@ import { collection, addDoc, getDocs, orderBy, query, deleteDoc, doc } from "fir
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Link from "next/link";
 
-const ADMIN_EMAILS = [
-  "guerrerogonzalez.alvaro@gmail.com",
-];
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
 interface PlaylistItem {
   id: string;

@@ -12,9 +12,7 @@ import { getLocales, type Local } from "@/lib/locales";
 import MapSelector from "@/components/MapSelector";
 
 // USAR LA MISMA LISTA PARA PROTEGER LA RUTA
-const ADMIN_EMAILS = [
-  "guerrerogonzalez.alvaro@gmail.com",
-];
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
 export default function AdminDashboardPage() {
   const router = useRouter();
