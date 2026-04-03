@@ -268,10 +268,10 @@ export default function AdminPlaylistPage() {
               <div 
                 key={track.id} 
                 className={`playlist-admin__item ${currentTrack?.id === track.id ? "playlist-admin__item--active" : ""}`}
-                onDoubleClick={() => playSong(track)}
+                onClick={() => playSong(track)}
               >
-                <div className="playlist-admin__item-index">
-                    <span className="playlist-admin__item-play-icon" onClick={(e) => { e.stopPropagation(); playSong(track); }}>▶</span>
+                <div className="playlist-admin__item-index" onClick={(e) => { e.stopPropagation(); playSong(track); }}>
+                    <span className="playlist-admin__item-play-icon">▶</span>
                     <span className="playlist-admin__item-num">{i + 1}</span>
                 </div>
                 <div className="playlist-admin__item-info">
