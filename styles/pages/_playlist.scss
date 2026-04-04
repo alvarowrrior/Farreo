@@ -4,7 +4,7 @@
 .playlist-admin {
   background-color: #121212;
   color: #ffffff;
-  min-height: calc(100vh - 80px); /* Adjusting for potential header */
+  min-height: calc(100vh - 80px);
   padding: 2rem 1rem;
   font-family: 'Inter', sans-serif;
   display: flex;
@@ -12,7 +12,6 @@
   position: relative;
   overflow: hidden;
 
-  /* Subtle gradient background like Spotify */
   &::before {
     content: "";
     position: absolute;
@@ -43,6 +42,14 @@
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   &__title {
@@ -68,17 +75,245 @@
     gap: 0.5rem;
     margin-bottom: 1rem;
     transition: color 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
 
     &:hover {
       color: #1ed760;
     }
   }
 
+  // ==========================================
+  // MENSAJES
+  // ==========================================
+  &__message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+
+    &--success {
+      background: rgba(30, 215, 96, 0.1);
+      color: #1ed760;
+      border: 1px solid rgba(30, 215, 96, 0.2);
+    }
+
+    &--error {
+      background: rgba(255, 75, 75, 0.1);
+      color: #ff4b4b;
+      border: 1px solid rgba(255, 75, 75, 0.2);
+    }
+  }
+
+  &__empty {
+    color: #b3b3b3;
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  // ==========================================
+  // SECCIONES
+  // ==========================================
+  &__section {
+    margin-bottom: 2.5rem;
+  }
+
+  &__section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  // ==========================================
+  // BOTONES DE ACCIÓN
+  // ==========================================
+  &__btn-create {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 500px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  &__btn-cancel-small {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 0.3rem;
+
+    &:hover {
+      color: #ff4b4b;
+    }
+  }
+
+  &__btn-action {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(30, 215, 96, 0.15);
+    color: #1ed760;
+    border: 1px solid rgba(30, 215, 96, 0.3);
+    border-radius: 500px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #1ed760;
+      color: #000;
+    }
+
+    &--danger {
+      background: rgba(255, 75, 75, 0.1);
+      color: #ff4b4b;
+      border-color: rgba(255, 75, 75, 0.3);
+
+      &:hover {
+        background: #ff4b4b;
+        color: #fff;
+      }
+    }
+  }
+
+  // ==========================================
+  // CREAR PLAYLIST FORM
+  // ==========================================
+  &__create-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__create-input {
+    padding: 0.5rem 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    width: 200px;
+
+    &:focus {
+      outline: none;
+      border-color: #1ed760;
+    }
+  }
+
+  // ==========================================
+  // GRID DE PLAYLISTS
+  // ==========================================
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  &__card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    position: relative;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      .playlist-admin__card-delete {
+        opacity: 1;
+      }
+    }
+  }
+
+  &__card-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #450af5, #c4efd9);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  &__card-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  &__card-name {
+    font-weight: 700;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__card-count {
+    font-size: 0.8rem;
+    color: #b3b3b3;
+    margin-top: 0.2rem;
+  }
+
+  &__card-delete {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    padding: 0.3rem;
+
+    &:hover {
+      color: #ff4b4b;
+    }
+  }
+
+  // ==========================================
+  // SUBIDA DE CANCIONES
+  // ==========================================
   &__upload-section {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     padding: 2rem;
-    margin-bottom: 2rem;
     text-align: center;
     backdrop-filter: blur(10px);
     border: 1px dashed rgba(255, 255, 255, 0.2);
@@ -142,9 +377,132 @@
     }
   }
 
+  // ==========================================
+  // FORMULARIO DE SUBIDA
+  // ==========================================
+  &__upload-form {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__upload-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  &__upload-form-file {
+    font-weight: 600;
+    color: #1ed760;
+  }
+
+  &__upload-form-change {
+    background: none;
+    border: none;
+    color: #ff4b4b;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 0.85rem;
+  }
+
+  &__upload-form-group {
+    margin-bottom: 1rem;
+  }
+
+  &__upload-form-label {
+    display: block;
+    color: #b3b3b3;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  &__upload-form-input {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: #1ed760;
+    }
+
+    &--error {
+      border-color: #ff4b4b;
+    }
+  }
+
+  &__upload-form-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__upload-form-add {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  }
+
+  &__upload-form-error {
+    color: #ff4b4b;
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  // ==========================================
+  // CHIPS (Variantes / Etiquetas)
+  // ==========================================
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    background: #1ed760;
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  &__chip-remove {
+    background: none;
+    border: none;
+    margin-left: 4px;
+    cursor: pointer;
+    color: #000;
+    font-weight: bold;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  // ==========================================
+  // LISTA DE CANCIONES
+  // ==========================================
   &__list {
     width: 100%;
-    margin-bottom: 6rem; /* Space for the fixed player */
+    margin-bottom: 6rem;
   }
 
   &__list-header {
@@ -171,21 +529,13 @@
     &:hover {
       background: rgba(255, 255, 255, 0.1);
 
-      .playlist-admin__item-play-icon {
-        opacity: 1;
-      }
-
-      .playlist-admin__item-num {
-        opacity: 0;
-      }
+      .playlist-admin__item-play-icon { opacity: 1; }
+      .playlist-admin__item-num { opacity: 0; }
     }
 
     &--active {
       background: rgba(255, 255, 255, 0.15);
-      
-      .playlist-admin__item-title {
-        color: #1ed760 !important;
-      }
+      .playlist-admin__item-title { color: #1ed760 !important; }
     }
   }
 
@@ -235,7 +585,118 @@
     text-overflow: ellipsis;
   }
 
-  /* FIXED PLAYER AT BOTTOM */
+  &__item-delete {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #ff4b4b;
+    }
+  }
+
+  // ==========================================
+  // SONG PICKER (Añadir canciones a playlist)
+  // ==========================================
+  &__song-picker {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-top: 1rem;
+    overflow: hidden;
+  }
+
+  &__song-picker-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &__song-picker-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    color: #b3b3b3;
+  }
+
+  &__song-picker-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none;
+
+    &::placeholder {
+      color: #666;
+    }
+  }
+
+  &__song-picker-list {
+    max-height: 300px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+  }
+
+  &__song-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(30, 215, 96, 0.1);
+
+      .playlist-admin__song-picker-item-add {
+        color: #1ed760;
+      }
+    }
+  }
+
+  &__song-picker-item-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__song-picker-item-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__song-picker-item-tags {
+    font-size: 0.75rem;
+    color: #b3b3b3;
+  }
+
+  &__song-picker-item-add {
+    color: #666;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+  }
+
+  // ==========================================
+  // REPRODUCTOR FIJO (3 columnas: info | controles | sliders)
+  // ==========================================
   &__player {
     position: fixed;
     bottom: 0;
@@ -243,88 +704,218 @@
     width: 100%;
     background: #181818;
     border-top: 1px solid #282828;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: center;
+    padding: 0.75rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
     z-index: 100;
 
     @include mx.render-to(vars.$bp-sm) {
-      padding: 1rem;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
     }
   }
 
-  &__player-controls {
+  // -- Columna izquierda: canción actual --
+  &__now-playing {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    @include mx.render-to(vars.$bp-sm) {
+      display: none;
+    }
+  }
+
+  &__now-playing-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__now-playing-pitch {
+    font-size: 0.7rem;
+    color: #1ed760;
+    background: rgba(30, 215, 96, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+    margin-top: 3px;
+  }
+
+  // -- Columna central: controles + progreso --
+  &__player-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    max-width: 600px;
-    width: 100%;
+    gap: 0.3rem;
   }
 
   &__player-buttons {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.2rem;
   }
 
   &__control-btn {
     background: transparent;
     border: none;
     color: #b3b3b3;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     cursor: pointer;
     transition: color 0.2s ease, transform 0.2s ease;
+    padding: 0;
 
-    &:hover {
-      color: #fff;
-    }
+    &:hover { color: #fff; }
 
     &--play {
       background: #fff;
       color: #000;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
-      padding-left: 3px;
+      font-size: 1.1rem;
+      padding-left: 2px;
 
       &:hover {
-        transform: scale(1.05);
+        transform: scale(1.06);
         color: #000;
       }
     }
-  }
 
-  &__now-playing {
-    position: absolute;
-    left: 2rem;
-    display: flex;
-    flex-direction: column;
+    &--shuffle {
+      font-size: 0.9rem;
+    }
 
-    @include mx.render-to(vars.$bp-md) {
-      display: none;
+    &--active {
+      color: #1ed760;
+      &:hover { color: #1fdf64; }
     }
   }
 
-  &__now-playing-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #fff;
+  // -- Barra de progreso --
+  &__progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 500px;
   }
 
-  &__now-playing-pitch {
-    font-size: 0.75rem;
-    color: #1ed760;
-    background: rgba(30, 215, 96, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
-    display: inline-block;
-    width: fit-content;
-    margin-top: 4px;
+  &__progress-time {
+    font-size: 0.7rem;
+    color: #b3b3b3;
+    min-width: 32px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__progress-bar {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: #535353;
+    outline: none;
+    cursor: pointer;
+    transition: height 0.15s ease;
+
+    &:hover {
+      height: 6px;
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    &:hover::-webkit-slider-thumb {
+      opacity: 1;
+    }
+
+    &::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      border: none;
+    }
+
+    &::-webkit-slider-runnable-track {
+      border-radius: 2px;
+    }
+  }
+
+  // -- Columna derecha: pitch + volumen --
+  &__player-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    @include mx.render-to(vars.$bp-sm) {
+      justify-content: center;
+    }
+  }
+
+  &__slider-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__slider-label {
+    font-size: 0.85rem;
+  }
+
+  &__mini-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 4px;
+    border-radius: 2px;
+    background: #535353;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    &::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      border: none;
+    }
+
+    &:hover {
+      &::-webkit-slider-thumb {
+        background: #1ed760;
+      }
+    }
   }
 }
