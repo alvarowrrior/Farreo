@@ -601,6 +601,108 @@
     }
   }
 
+  &__item-edit {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #1ed760;
+    }
+  }
+
+  &__item-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  // ==========================================
+  // BUSCADOR DE CANCIONES
+  // ==========================================
+  &__search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 1rem;
+    color: #b3b3b3;
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: #1ed760;
+    }
+  }
+
+  &__search-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none;
+
+    &::placeholder {
+      color: #666;
+    }
+  }
+
+  &__search-clear {
+    background: none;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  // ==========================================
+  // MODAL DE EDICIÓN
+  // ==========================================
+  &__modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+  }
+
+  &__modal {
+    background: #282828;
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  &__modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0;
+    }
+  }
+
   // ==========================================
   // SONG PICKER (Añadir canciones a playlist)
   // ==========================================

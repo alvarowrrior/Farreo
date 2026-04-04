@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
-import { TrashIcon, PlusIcon, ListMusicIcon, ArrowLeftIcon, LibraryIcon, SearchIcon, ShuffleIcon, ArrowRightIcon, Volume2Icon, VolumeXIcon, DicesIcon } from "lucide-react";
+import { TrashIcon, PlusIcon, ListMusicIcon, ArrowLeftIcon, LibraryIcon, SearchIcon, ShuffleIcon, ArrowRightIcon, Volume2Icon, VolumeXIcon, DicesIcon, PencilIcon, XIcon, ShareIcon } from "lucide-react";
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
@@ -77,6 +77,17 @@ export default function AdminPlaylistPage() {
   const [allSongs, setAllSongs] = useState<PlaylistItem[]>([]);
   const [songSearchQuery, setSongSearchQuery] = useState("");
 
+  // Buscadores de canciones
+  const [searchAllCanciones, setSearchAllCanciones] = useState("");
+  const [searchPlaylistCanciones, setSearchPlaylistCanciones] = useState("");
+
+  // Editor de canción
+  const [editingTrack, setEditingTrack] = useState<PlaylistItem | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [editVariantes, setEditVariantes] = useState<string[]>([]);
+  const [editNuevaVariante, setEditNuevaVariante] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -92,6 +103,14 @@ export default function AdminPlaylistPage() {
     });
     return () => unsub();
   }, []);
+
+  // Ocultar mensajes automáticamente después de 3 segundos
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   // ==========================================
   // CARGA DE DATOS
@@ -438,6 +457,77 @@ export default function AdminPlaylistPage() {
     return `${m}:${sec < 10 ? '0' : ''}${sec}`;
   };
 
+  // ==========================================
+  // COMPARTIR
+  // ==========================================
+  const handleShare = (type: 'song' | 'playlist', identifier: string) => {
+    const url = `${window.location.origin}/play?${type}=${encodeURIComponent(identifier)}`;
+    navigator.clipboard.writeText(url)
+      .then(() => setMessage({ type: "success", text: "Enlace copiado al portapapeles." }))
+      .catch(() => setMessage({ type: "error", text: "Error copiando el enlace." }));
+  };
+
+  // ==========================================
+  // EDITAR CANCIÓN
+  // ==========================================
+
+  const openEditModal = (track: PlaylistItem) => {
+    setEditingTrack(track);
+    setEditNombre(track.name);
+    setEditVariantes(track.variantes ? [...track.variantes] : []);
+    setEditNuevaVariante("");
+  };
+
+  const closeEditModal = () => {
+    setEditingTrack(null);
+    setEditNombre("");
+    setEditVariantes([]);
+    setEditNuevaVariante("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingTrack) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`${TUNNEL_URL}/cancion/${editingTrack.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: editNombre.trim(), variantes: editVariantes })
+      });
+      if (res.ok) {
+        setMessage({ type: "success", text: "Canción actualizada." });
+        closeEditModal();
+        loadAllCanciones();
+        loadEtiquetas();
+      } else {
+        const err = await res.json();
+        setMessage({ type: "error", text: err.error || "Error actualizando." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "No se pudo conectar al servidor." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ==========================================
+  // FILTROS DE BÚSQUEDA
+  // ==========================================
+
+  const filteredAllCanciones = allCanciones.filter(t => {
+    if (!searchAllCanciones.trim()) return true;
+    const q = searchAllCanciones.toLowerCase();
+    return t.name.toLowerCase().includes(q) ||
+      (t.variantes && t.variantes.some(v => v.toLowerCase().includes(q)));
+  });
+
+  const filteredPlaylist = playlist.filter(t => {
+    if (!searchPlaylistCanciones.trim()) return true;
+    const q = searchPlaylistCanciones.toLowerCase();
+    return t.name.toLowerCase().includes(q) ||
+      (t.variantes && t.variantes.some(v => v.toLowerCase().includes(q)));
+  });
+
   // Borrar canción DE LA BD (mp3 + json + de todas las playlists)
   const handleDeleteFromDB = async (item: PlaylistItem) => {
     if (!window.confirm(`¿BORRAR PERMANENTEMENTE "${item.name}" de la base de datos?`)) return;
@@ -626,22 +716,41 @@ export default function AdminPlaylistPage() {
 
           {/* Sección: Todas las Canciones de la BD */}
           <section className="playlist-admin__section">
-            <h2 className="playlist-admin__section-title">
-              🎧 Todas las Canciones
-            </h2>
+            <div className="playlist-admin__section-header">
+              <h2 className="playlist-admin__section-title">
+                🎧 Todas las Canciones ({allCanciones.length})
+              </h2>
+            </div>
+
+            {/* Buscador */}
+            <div className="playlist-admin__search-bar">
+              <SearchIcon size={16} />
+              <input
+                type="text"
+                value={searchAllCanciones}
+                onChange={(e) => setSearchAllCanciones(e.target.value)}
+                placeholder="Buscar canción..."
+                className="playlist-admin__search-input"
+              />
+              {searchAllCanciones && (
+                <button onClick={() => setSearchAllCanciones("")} className="playlist-admin__search-clear">
+                  <XIcon size={14} />
+                </button>
+              )}
+            </div>
 
             {loadingAllCanciones ? (
               <p className="playlist-admin__empty">Cargando canciones...</p>
-            ) : allCanciones.length === 0 ? (
-              <p className="playlist-admin__empty">No hay canciones en la base de datos.</p>
+            ) : filteredAllCanciones.length === 0 ? (
+              <p className="playlist-admin__empty">{searchAllCanciones ? "Sin resultados." : "No hay canciones en la base de datos."}</p>
             ) : (
               <div className="playlist-admin__list">
                 <div className="playlist-admin__list-header">
                   <div>#</div>
                   <div>Título</div>
-                  <div style={{ textAlign: "right" }}>Eliminar</div>
+                  <div style={{ textAlign: "right" }}>Acciones</div>
                 </div>
-                {allCanciones.map((track, i) => (
+                {filteredAllCanciones.map((track, i) => (
                   <div key={track.id} className="playlist-admin__item">
                     <div className="playlist-admin__item-index">
                       <span className="playlist-admin__item-num">{i + 1}</span>
@@ -652,7 +761,21 @@ export default function AdminPlaylistPage() {
                         <span className="playlist-admin__item-date">{track.variantes.join(", ")}</span>
                       )}
                     </div>
-                    <div style={{ textAlign: "right" }}>
+                    <div className="playlist-admin__item-actions">
+                      <button
+                        onClick={() => handleShare('song', track.id)}
+                        className="playlist-admin__item-edit"
+                        title="Compartir enlace público"
+                      >
+                        <ShareIcon size={16} />
+                      </button>
+                      <button
+                        onClick={() => openEditModal(track)}
+                        className="playlist-admin__item-edit"
+                        title="Editar canción"
+                      >
+                        <PencilIcon size={16} />
+                      </button>
                       <button
                         onClick={() => handleDeleteFromDB(track)}
                         className="playlist-admin__item-delete"
@@ -666,6 +789,69 @@ export default function AdminPlaylistPage() {
               </div>
             )}
           </section>
+
+          {/* Modal de edición */}
+          {editingTrack && (
+            <div className="playlist-admin__modal-overlay" onClick={closeEditModal}>
+              <div className="playlist-admin__modal" onClick={(e) => e.stopPropagation()}>
+                <div className="playlist-admin__modal-header">
+                  <h3>Editar Canción</h3>
+                  <button onClick={closeEditModal} className="playlist-admin__btn-cancel-small">✕</button>
+                </div>
+
+                <div className="playlist-admin__upload-form-group">
+                  <label className="playlist-admin__upload-form-label">Nombre</label>
+                  <input
+                    type="text"
+                    value={editNombre}
+                    onChange={(e) => setEditNombre(e.target.value)}
+                    className="playlist-admin__upload-form-input"
+                  />
+                </div>
+
+                <div className="playlist-admin__upload-form-group">
+                  <label className="playlist-admin__upload-form-label">Variantes / Etiquetas</label>
+                  <div className="playlist-admin__chips">
+                    {editVariantes.map((v, i) => (
+                      <span key={i} className="playlist-admin__chip">
+                        {v}
+                        <button onClick={() => setEditVariantes(prev => prev.filter((_, idx) => idx !== i))} className="playlist-admin__chip-remove">×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="playlist-admin__upload-form-row">
+                    <input
+                      type="text"
+                      value={editNuevaVariante}
+                      onChange={(e) => setEditNuevaVariante(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && editNuevaVariante.trim()) {
+                          e.preventDefault();
+                          setEditVariantes(prev => [...prev, editNuevaVariante.trim()]);
+                          setEditNuevaVariante("");
+                        }
+                      }}
+                      placeholder="Nueva variante..."
+                      className="playlist-admin__upload-form-input"
+                    />
+                    <button
+                      onClick={() => {
+                        if (editNuevaVariante.trim()) {
+                          setEditVariantes(prev => [...prev, editNuevaVariante.trim()]);
+                          setEditNuevaVariante("");
+                        }
+                      }}
+                      className="playlist-admin__upload-form-add"
+                    >Añadir</button>
+                  </div>
+                </div>
+
+                <button onClick={saveEdit} disabled={isSaving} className="playlist-admin__upload-btn">
+                  {isSaving ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     );
@@ -686,6 +872,9 @@ export default function AdminPlaylistPage() {
             <p className="playlist-admin__subtitle">{playlist.length} canciones</p>
           </div>
           <div className="playlist-admin__header-actions">
+            <button onClick={() => playlistActual && handleShare('playlist', playlistActual)} className="playlist-admin__btn-action" title="Compartir playlist completa" style={{ background: "transparent", border: "1px solid #1ed760", color: "#1ed760" }}>
+              <ShareIcon size={16} /> Compartir Playlist
+            </button>
             <button onClick={openSongPicker} className="playlist-admin__btn-action" title="Añadir canción a la playlist">
               <PlusIcon size={16} /> Añadir Canción
             </button>
@@ -743,6 +932,23 @@ export default function AdminPlaylistPage() {
         )}
 
         <section className="playlist-admin__list">
+          {/* Buscador dentro de playlist */}
+          <div className="playlist-admin__search-bar">
+            <SearchIcon size={16} />
+            <input
+              type="text"
+              value={searchPlaylistCanciones}
+              onChange={(e) => setSearchPlaylistCanciones(e.target.value)}
+              placeholder="Buscar en esta playlist..."
+              className="playlist-admin__search-input"
+            />
+            {searchPlaylistCanciones && (
+              <button onClick={() => setSearchPlaylistCanciones("")} className="playlist-admin__search-clear">
+                <XIcon size={14} />
+              </button>
+            )}
+          </div>
+
           <div className="playlist-admin__list-header">
             <div>#</div>
             <div>Título</div>
@@ -751,10 +957,10 @@ export default function AdminPlaylistPage() {
 
           {loading ? (
             <p className="playlist-admin__empty">Cargando canciones...</p>
-          ) : playlist.length === 0 ? (
-            <p className="playlist-admin__empty">No hay canciones. ¡Usa &quot;Añadir Todas&quot; para llenarla!</p>
+          ) : filteredPlaylist.length === 0 ? (
+            <p className="playlist-admin__empty">{searchPlaylistCanciones ? "Sin resultados." : "No hay canciones. ¡Usa \"Añadir Canción\" para llenarla!"}</p>
           ) : (
-            playlist.map((track, i) => (
+            filteredPlaylist.map((track, i) => (
               <div
                 key={track.id}
                 className={`playlist-admin__item ${currentTrack?.id === track.id ? "playlist-admin__item--active" : ""}`}
@@ -772,7 +978,14 @@ export default function AdminPlaylistPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ textAlign: "right" }}>
+                <div className="playlist-admin__item-actions">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleShare('song', track.id); }}
+                    className="playlist-admin__item-edit"
+                    title="Compartir enlace público"
+                  >
+                    <ShareIcon size={16} />
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleRemoveFromPlaylist(track); }}
                     className="playlist-admin__item-delete"
