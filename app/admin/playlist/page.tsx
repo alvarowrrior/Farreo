@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Link from "next/link";
-import { TrashIcon, PlusIcon, ListMusicIcon, ArrowLeftIcon, LibraryIcon, SearchIcon, ShuffleIcon, ArrowRightIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import { TrashIcon, PlusIcon, ListMusicIcon, ArrowLeftIcon, LibraryIcon, SearchIcon, ShuffleIcon, ArrowRightIcon, Volume2Icon, VolumeXIcon, DicesIcon } from "lucide-react";
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
@@ -69,6 +69,7 @@ export default function AdminPlaylistPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isShuffle, setIsShuffle] = useState(true);
+  const [autoRandomPitch, setAutoRandomPitch] = useState(true);
   const [dragActive, setDragActive] = useState(false);
 
   // Picker de canciones para añadir a playlist
@@ -340,12 +341,33 @@ export default function AdminPlaylistPage() {
 
   const playSong = (track: PlaylistItem) => {
     if (!track.url) return;
+
+    // Si es la misma canción, toggle pause/play
+    if (currentTrack?.id === track.id) {
+      if (audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+      }
+      return;
+    }
+
+    // Canción nueva
+    let pitch = playbackPitch;
+    if (autoRandomPitch) {
+      pitch = Math.random() * (1.2 - 0.8) + 0.8;
+      setPlaybackPitch(pitch);
+    }
+
     setCurrentTrack(track);
     setIsPlaying(true);
     setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.preservesPitch = false;
-        audioRef.current.playbackRate = playbackPitch;
+        audioRef.current.playbackRate = pitch;
         audioRef.current.volume = volume;
         audioRef.current.play().catch(e => console.error("Auto-play prevented", e));
       }
@@ -815,7 +837,13 @@ export default function AdminPlaylistPage() {
         <div className="playlist-admin__player-right">
           {/* Pitch slider */}
           <div className="playlist-admin__slider-group">
-            <span className="playlist-admin__slider-label">🎛️</span>
+            <button
+              className={`playlist-admin__control-btn playlist-admin__control-btn--pitch-toggle ${autoRandomPitch ? 'playlist-admin__control-btn--active' : ''}`}
+              onClick={() => setAutoRandomPitch(v => !v)}
+              title={autoRandomPitch ? 'Pitch aleatorio al cambiar canción' : 'Pitch fijo (manual)'}
+            >
+              <DicesIcon size={16} />
+            </button>
             <input
               type="range"
               min={0.5}
