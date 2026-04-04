@@ -8,8 +8,8 @@ import { TrashIcon, PlusIcon, ListMusicIcon, ArrowLeftIcon, LibraryIcon, SearchI
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
 
-// URL del servidor de música en casa del amigo (DDNS)
-const TUNNEL_URL = "http://welite.ddns.net:3001";
+// ⚠️ URL del servidor de música en casa del amigo (DDNS con HTTPS)
+const TUNNEL_URL = "https://welite.ddns.net:3001";
 
 interface PlaylistItem {
   id: string;
