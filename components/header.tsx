@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import type { User } from "firebase/auth";
+
+// Firebase se carga en diferido (import dinámico) para no meter ~100KB de JS
+// en el bundle inicial de todas las páginas solo para pintar el avatar.
+const loadFirebaseAuth = () =>
+  Promise.all([import("firebase/auth"), import("../lib/firebase")]);
 
 // LISTA DE ADMINISTRADORES AUTORIZADOS
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",");
@@ -43,11 +47,20 @@ export default function Header() {
   const isAdmin = user?.email ? ADMIN_EMAILS.includes(user.email) : false;
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    loadFirebaseAuth().then(([{ onAuthStateChanged }, { auth }]) => {
+      if (cancelled) return;
+      unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    });
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }, []);
 
   async function logout() {
+    const [{ signOut }, { auth }] = await loadFirebaseAuth();
     await signOut(auth);
     setMenuOpen(false);
   }

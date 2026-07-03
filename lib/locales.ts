@@ -22,8 +22,42 @@ function toNumber(v: any, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-export async function getLocales(): Promise<Local[]> {
-  try {
+// Caché en memoria: /buscar pedía la colección dos veces (página + mapa) y cada
+// navegación repetía la lectura completa de Firestore.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let localesCache: { data: Local[]; ts: number } | null = null;
+let pendingFetch: Promise<Local[]> | null = null;
+
+export function invalidateLocalesCache() {
+  localesCache = null;
+  pendingFetch = null;
+}
+
+export async function getLocales(fresh = false): Promise<Local[]> {
+  if (!fresh) {
+    if (localesCache && Date.now() - localesCache.ts < CACHE_TTL_MS) {
+      return localesCache.data;
+    }
+    if (pendingFetch) return pendingFetch;
+  }
+
+  pendingFetch = (async () => {
+    try {
+      const data = await fetchLocalesFromFirestore();
+      localesCache = { data, ts: Date.now() };
+      return data;
+    } catch (error) {
+      console.error("Error al obtener locales:", error);
+      return localesCache?.data ?? [];
+    } finally {
+      pendingFetch = null;
+    }
+  })();
+
+  return pendingFetch;
+}
+
+async function fetchLocalesFromFirestore(): Promise<Local[]> {
     const q = query(collection(db, "locales"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
 
@@ -61,8 +95,4 @@ export async function getLocales(): Promise<Local[]> {
         audioUrl: (d.audioUrl as string) ?? "",
       };
     });
-  } catch (error) {
-    console.error("Error al obtener locales:", error);
-    return [];
-  }
 }

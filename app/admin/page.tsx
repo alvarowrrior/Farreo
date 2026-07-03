@@ -8,7 +8,7 @@ import { collection, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestor
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Link from "next/link";
 import Image from "next/image";
-import { getLocales, type Local } from "@/lib/locales";
+import { getLocales, invalidateLocalesCache, type Local } from "@/lib/locales";
 import MapSelector from "@/components/MapSelector";
 
 // USAR LA MISMA LISTA PARA PROTEGER LA RUTA
@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
 
   const loadLocales = async () => {
     setLoading(true);
-    const data = await getLocales();
+    const data = await getLocales(true);
     setLocalesList(data);
     setLoading(false);
   };
@@ -205,6 +205,8 @@ export default function AdminDashboardPage() {
         });
         setMessage({ type: "success", text: "¡Local añadido con éxito!" });
       }
+
+      invalidateLocalesCache();
 
       // 3. Resetear el formulario
       setFormData({

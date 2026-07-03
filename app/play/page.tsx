@@ -86,17 +86,43 @@ function PlayerContent() {
     loadData();
   }, [playlistParam, songParam]);
 
-  const playSong = (track: PlaylistItem) => {
-    if (!track.url) return;
+  // MediaSession: mantiene la sesión de audio viva con la pantalla apagada y
+  // muestra los controles en la pantalla de bloqueo. Los refs evitan que los
+  // handlers del sistema se queden con una versión antigua de playNext/playPrev.
+  const playNextRef = useRef<() => void>(() => {});
+  const playPrevRef = useRef<() => void>(() => {});
 
-    if (currentTrack?.id === track.id) {
-      if (audioRef.current) {
-        if (isPlaying) audioRef.current.pause();
-        else audioRef.current.play();
-        setIsPlaying(!isPlaying);
-      }
-      return;
-    }
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    ms.setActionHandler("play", () => { audioRef.current?.play(); });
+    ms.setActionHandler("pause", () => { audioRef.current?.pause(); });
+    ms.setActionHandler("nexttrack", () => playNextRef.current());
+    ms.setActionHandler("previoustrack", () => playPrevRef.current());
+    return () => {
+      ms.setActionHandler("play", null);
+      ms.setActionHandler("pause", null);
+      ms.setActionHandler("nexttrack", null);
+      ms.setActionHandler("previoustrack", null);
+    };
+  }, []);
+
+  const updateMediaSession = (track: PlaylistItem) => {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.name,
+      artist: "Farreo",
+      album: playlistParam || "Farreo",
+    });
+  };
+
+  // Arranca una pista escribiendo directamente en el <audio>, sin setTimeout ni
+  // esperar al re-render: con el móvil bloqueado los timers se throttlean y un
+  // play() fuera de la cadena del evento 'ended' queda bloqueado por la política
+  // de autoplay (por eso la música se paraba tras 2-3 canciones en segundo plano).
+  const startTrack = (track: PlaylistItem) => {
+    const audio = audioRef.current;
+    if (!audio || !track.url) return;
 
     let pitch = playbackPitch;
     if (autoRandomPitch) {
@@ -104,19 +130,43 @@ function PlayerContent() {
       setPlaybackPitch(pitch);
     }
 
+    audio.src = track.url;
+    audio.preservesPitch = false;
+    audio.defaultPlaybackRate = pitch;
+    audio.playbackRate = pitch;
+    audio.volume = volume;
+    audio.play().catch(e => {
+      console.error("Auto-play prevented (requiere interacción)", e);
+      setIsPlaying(false); // Si falla, que el botón vuelva a mostrar 'Play'
+    });
+
     setCurrentTrack(track);
     setIsPlaying(true);
-    setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.preservesPitch = false;
-        audioRef.current.playbackRate = pitch;
-        audioRef.current.volume = volume;
-        audioRef.current.play().catch(e => {
-          console.error("Auto-play prevented (requiere interacción)", e);
-          setIsPlaying(false); // Si falla, que el botón vuelva a mostrar 'Play'
-        });
+    setCurrentTime(0);
+    updateMediaSession(track);
+  };
+
+  const playSong = (track: PlaylistItem) => {
+    if (!track.url) return;
+
+    const audio = audioRef.current;
+    // Misma canción ya cargada: alternar pausa/reproducción
+    if (currentTrack?.id === track.id && audio && audio.src) {
+      if (audio.ended) {
+        audio.currentTime = 0;
+        audio.play();
+        setIsPlaying(true);
+      } else if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        audio.play();
+        setIsPlaying(true);
       }
-    }, 50);
+      return;
+    }
+
+    startTrack(track);
   };
 
   const playNext = () => {
@@ -149,12 +199,23 @@ function PlayerContent() {
     }
   };
 
+  // Mantener los handlers de MediaSession apuntando a la versión más reciente
+  useEffect(() => {
+    playNextRef.current = playNext;
+    playPrevRef.current = playPrev;
+  });
+
   const togglePlayPause = () => {
-    if (!currentTrack && playlist.length > 0) { playNext(); return; }
-    if (audioRef.current) {
-      if (isPlaying) audioRef.current.pause(); else audioRef.current.play();
-      setIsPlaying(!isPlaying);
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (!audio.src) {
+      // Aún no hay nada cargado en el <audio>: arrancar la pista seleccionada
+      if (currentTrack) startTrack(currentTrack);
+      else if (playlist.length > 0) playNext();
+      return;
     }
+    if (isPlaying) audio.pause(); else audio.play();
+    setIsPlaying(!isPlaying);
   };
 
   const handleVolumeChange = (val: number) => {
@@ -331,12 +392,19 @@ function PlayerContent() {
 
         <audio
           ref={audioRef}
-          src={currentTrack?.url || undefined}
           onEnded={playNext}
-          onPause={() => setIsPlaying(false)}
-          onPlay={() => setIsPlaying(true)}
+          onPause={() => {
+            setIsPlaying(false);
+            if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+          }}
+          onPlay={() => {
+            setIsPlaying(true);
+            if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+          }}
           onTimeUpdate={() => {
-            if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+            // Solo re-renderizar cuando cambia el segundo visible en la UI
+            const t = audioRef.current?.currentTime ?? 0;
+            setCurrentTime(prev => (Math.floor(prev) === Math.floor(t) ? prev : t));
           }}
           onLoadedMetadata={() => {
             if (audioRef.current) {

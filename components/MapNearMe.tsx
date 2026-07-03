@@ -29,7 +29,6 @@ export default function MapNearMe({ onSelectLocal, externalSelectedId }: MapProp
       style: "mapbox://styles/mapbox/dark-v11",
       center: [-3.7038, 40.4168], // Madrid
       zoom: 14,
-      antialias: true,
     });
 
     mapRef.current = map;
